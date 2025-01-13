@@ -16,6 +16,8 @@ import torch
 from category_encoders import LeaveOneOutEncoder
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+
 
 from . import env, util
 from .metrics import calculate_metrics as calculate_metrics_
@@ -65,22 +67,48 @@ class Dataset:
     @classmethod
     def from_dir(cls, dir_: Union[Path, str]) -> 'Dataset':
         dir_ = Path(dir_)
-
-        def load(item) -> ArrayDict:
-            return {
-                x: cast(np.ndarray, np.load(dir_ / f'{item}_{x}.npy'))  # type: ignore[code]
-                for x in ['train', 'val', 'test']
-            }
-
-        info = util.load_json(dir_ / 'info.json')
+        
+        # Load Android security data
+        df = pd.read_csv(dir_ / 'corrected_permacts.csv')
+        
+        # Split features and target
+        X = df.drop(['status'], axis=1)
+        y = df['status']
+        
+        # Create train/val/test splits
+        X_train, X_temp, y_train, y_temp = train_test_split(
+            X, y, test_size=0.3, random_state=42, stratify=y
+        )
+        X_val, X_test, y_val, y_test = train_test_split(
+            X_temp, y_temp, test_size=0.5, random_state=42, stratify=y_temp
+        )
+        
+        # Format data for model
+        X_num = {
+            'train': X_train.select_dtypes(include=['int64', 'float64']).values.astype(np.float32),
+            'val': X_val.select_dtypes(include=['int64', 'float64']).values.astype(np.float32),
+            'test': X_test.select_dtypes(include=['int64', 'float64']).values.astype(np.float32)
+        }
+        
+        X_cat = {
+            'train': X_train.select_dtypes(include=['object']).values,
+            'val': X_val.select_dtypes(include=['object']).values,
+            'test': X_test.select_dtypes(include=['object']).values
+        }
+        
+        y_dict = {
+            'train': y_train.values,
+            'val': y_val.values,
+            'test': y_test.values
+        }
 
         return Dataset(
-            load('X_num') if dir_.joinpath('X_num_train.npy').exists() else None,
-            load('X_cat') if dir_.joinpath('X_cat_train.npy').exists() else None,
-            load('y'),
-            {},
-            TaskType(info['task_type']),
-            info.get('n_classes'),
+            X_num=X_num,
+            X_cat=X_cat,
+            y=y_dict,
+            y_info={},
+            task_type=TaskType.BINCLASS,
+            n_classes=2
         )
 
     @property
