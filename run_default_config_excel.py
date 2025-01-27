@@ -21,7 +21,7 @@ from lib import Transformations, build_dataset, prepare_tensors, make_optimizer,
 DATASETS = [
     'analcatdata_supreme', 'isolet', 'cpu_act', 'visualizing_soil', 'yprop_4_1', 'gesture', 'churn', 'sulfur', 'bank-marketing', 'Brazilian_houses'
     'eye', 'MagicTelescope', 'Ailerons', 'pol', 'polv2', 'credit', 'california', 'house_sales', 'house', 'diamonds', 'helena', 'jannis', 'higgs-small',
-    'road-safety', 'medical_charges', 'SGEMM_GPU_kernel_performance', 'covtype', 'nyc-taxi-green-dec-2016'
+    'road-safety', 'medical_charges', 'SGEMM_GPU_kernel_performance', 'covtype', 'nyc-taxi-green-dec-2016', 'android_security'
 ]
 
 def get_training_args():
@@ -84,7 +84,10 @@ def seed_everything(seed=42):
 
 
 """args"""
-device = torch.device('cuda')
+# device = torch.device('cuda')
+
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 args, cfg = get_training_args()
 seed_everything(args.seed)
 
@@ -93,6 +96,13 @@ assert args.dataset in DATASETS
 T_cache = False # save data preprocessing cache
 normalization = args.normalization if args.normalization != '__none__' else None
 transformation = Transformations(normalization=normalization)
+
+'''
+transformation = Transformations(
+    normalization=normalization,
+    num_nan_policy='drop-rows'  # Change from None or 'mean' to 'drop-rows'
+)'''
+
 dataset = build_dataset(DATA / args.dataset, transformation, T_cache)
 
 if dataset.X_num['train'].dtype == np.float64:
@@ -107,30 +117,42 @@ if args.catenc and dataset.X_cat is not None:
     for k in ['train', 'val', 'test']:
         # 1: directly regard catgorical features as numerical
         dataset.X_num[k] = np.concatenate([enc.transform(dataset.X_cat[k]).astype(np.float32), dataset.X_num[k]], axis=1)
-
+print(f"dataset.X_num['train'].shape: {dataset.X_num['train'].shape}")
 d_out = dataset.n_classes or 1
 X_num, X_cat, ys = prepare_tensors(dataset, device=device)
-
+print(f"X_num shape after prepare_tensors: {X_num['train'].shape}")
 if args.catenc: # if use CatBoostEncoder then drop original categorical features
     X_cat = None
 
 """ ORDER numerical features with MUTUAL INFORMATION """
+print(f"X_num shape before reorder: {X_num['train'].shape}")
 mi_cache_dir = 'cache/mi'
 if not os.path.isdir(mi_cache_dir):
     os.makedirs(mi_cache_dir)
 mi_cache_file = f'{mi_cache_dir}/{args.dataset}.npy' # cache to save mutual information
 if os.path.exists(mi_cache_file):
+    os.remove(mi_cache_file)
+if os.path.exists(mi_cache_file):
     mi_scores = np.load(mi_cache_file)
+    print(f"mi_scores shape: {mi_scores.shape}")
 else:
     mi_func = mutual_info_regression if dataset.is_regression else mutual_info_classif
+    print(f"x_num shape in mi_func: {dataset.X_num['train'].shape}")
     mi_scores = mi_func(dataset.X_num['train'], dataset.y['train']) # calculate MI
+    print(f"mi_scores shape: {mi_scores.shape}")
     np.save(mi_cache_file, mi_scores)
 mi_ranks = np.argsort(-mi_scores)
+print(f"mi_ranks shape: {mi_ranks.shape}")
+
+print(f"Unique values in mi_ranks: {np.unique(mi_ranks)}")
+print(f"Number of unique values in mi_ranks: {len(np.unique(mi_ranks))}")
+
 # reorder the feature with mutual information ranks
 X_num = {k: v[:, mi_ranks] for k, v in X_num.items()}
 # normalized mutual information for loss weight
 sorted_mi_scores = torch.from_numpy(mi_scores[mi_ranks] / mi_scores.sum()).float().to(device)
 """ END FEATURE REORDER """
+print(f"X_num shape after reorder: {X_num['train'].shape}")
 
 # set batch size
 batch_size_dict = {
@@ -163,7 +185,9 @@ cfg['training'].update({
 })
 
 # data loaders
+print(f"X_num shape in data loaders: {X_num['train'].shape}")
 data_list = [X_num, ys] if X_cat is None else [X_num, X_cat, ys]
+print(f"data_list contents and shapes: {[{k: v.shape for k, v in d.items()} for d in data_list]}")
 train_dataset = TensorDataset(*(d['train'] for d in data_list))
 train_loader = DataLoader(
     dataset=train_dataset,
@@ -187,6 +211,7 @@ dataloaders = {'train': train_loader, 'val': val_loader, 'test': test_loader}
 """ Prepare Model """
 # datset specific params
 n_num_features = dataset.n_num_features # drop some features
+print(f"n_num_features: {n_num_features}")
 cardinalities = dataset.get_category_sizes('train')
 n_categories = len(cardinalities)
 if args.catenc:
@@ -250,6 +275,7 @@ loss_fn = (
 
 """Utils Function"""
 def apply_model(x_num, x_cat=None, mixup=False):
+    print(f"apply_model x_num shape: {x_num.shape}")
     if mixup:
         return model(x_num, x_cat, mixup=True, beta=args.beta, mtype=args.mix_type)
     return model(x_num, x_cat)
@@ -269,6 +295,7 @@ def evaluate(parts):
                 else batch
             )
             start = time.time()
+            print(f"x_num shape in evaluate: {x_num.shape}")
             predictions[part].append(apply_model(x_num, x_cat))
             infer_time += time.time() - start
         predictions[part] = torch.cat(predictions[part]).cpu().numpy()
@@ -337,6 +364,7 @@ for epoch in range(1, n_epochs + 1):
             if len(batch) == 2
             else batch
         )
+        print(f"x_num shape in training block: {x_num.shape}")
 
         start = time.time()
         optimizer.zero_grad()
