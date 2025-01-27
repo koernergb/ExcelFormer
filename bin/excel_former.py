@@ -58,6 +58,9 @@ class Tokenizer(nn.Module):
         self.bias = nn.Parameter(Tensor(d_bias, d_token)) if bias else None
         self.bias2 = nn.Parameter(Tensor(d_bias, d_token)) if bias else None
 
+        print(f"d_numerical: {d_numerical}")
+        print(f"weight shape: {self.weight.shape}")
+        print(f"bias shape: {self.bias.shape if self.bias is not None else 'None'}")
         # v4
         attenuated_kaiming_uniform_(self.weight)
         attenuated_kaiming_uniform_(self.weight2)
@@ -73,6 +76,7 @@ class Tokenizer(nn.Module):
 
     def forward(self, x_num: Tensor) -> Tensor:
         x_some = x_num
+        print(f"x_num shape: {x_num.shape}")
         assert x_some is not None
         x1 = self.weight[None] * x_num[:, :, None] + self.bias[None]
         x2 = self.weight2[None] * x_num[:, :, None] + self.bias2[None]
