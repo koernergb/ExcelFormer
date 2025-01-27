@@ -1,0 +1,6 @@
+env/
+DATA/
+*.pyc
+__pycache__/
+*.so
+*.dylib
