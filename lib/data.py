@@ -71,6 +71,14 @@ class Dataset:
         # Load Android security data
         df = pd.read_csv(dir_ / 'corrected_permacts.csv')
         
+        # Drop rows with NaN values
+        df = df.dropna()
+
+
+        # Ensure there are no NaNs in numeric columns
+        # print("Columns with NaNs after dropna():")
+        # print(df.isna().sum())
+
         # Split features and target
         X = df.drop(['status'], axis=1)
         y = df['status']
@@ -418,6 +426,7 @@ def build_dataset(
 def prepare_tensors(
     dataset: Dataset, device: Union[str, torch.device]
 ) -> Tuple[Optional[TensorDict], Optional[TensorDict], TensorDict]:
+    print(f"dataset.X_num['train'].shape: {dataset.X_num['train'].shape}")
     if isinstance(device, str):
         device = torch.device(device)
     X_num, X_cat, Y = (
@@ -433,6 +442,7 @@ def prepare_tensors(
     assert Y is not None
     if not dataset.is_multiclass:
         Y = {k: v.float() for k, v in Y.items()}
+    print(f"X_num shape in prepare_tensors: {X_num['train'].shape}")
     return X_num, X_cat, Y
 
 
