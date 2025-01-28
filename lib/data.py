@@ -73,7 +73,7 @@ class Dataset:
         
         # Drop rows with NaN values
         df = df.dropna()
-
+        df = df.head(500)
 
         # Ensure there are no NaNs in numeric columns
         # print("Columns with NaNs after dropna():")
