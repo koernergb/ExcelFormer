@@ -32,18 +32,21 @@ def _get_labels_and_probs(
         return y_pred, None
 
     if prediction_type == PredictionType.LOGITS:
-        probs = (
-            scipy.special.expit(y_pred)
-            if task_type == TaskType.BINCLASS
-            else scipy.special.softmax(y_pred, axis=1)
-        )
+        if task_type == TaskType.BINCLASS:
+            probs = scipy.special.softmax(y_pred, axis=1)  # Convert to probabilities
+            labels = probs.argmax(axis=1)  # Take highest probability class
+            probs = probs[:, 1]  # Only keep positive class probability for ROC AUC
+        else:
+            probs = scipy.special.softmax(y_pred, axis=1)
+            labels = probs.argmax(axis=1)
     elif prediction_type == PredictionType.PROBS:
         probs = y_pred
+        labels = probs.argmax(axis=1)
+        if task_type == TaskType.BINCLASS:
+            probs = probs[:, 1]  # Only keep positive class probability for ROC AUC
     else:
         util.raise_unknown('prediction_type', prediction_type)
 
-    assert probs is not None
-    labels = np.round(probs) if task_type == TaskType.BINCLASS else probs.argmax(axis=1)
     return labels.astype('int64'), probs
 
 
@@ -59,6 +62,14 @@ def calculate_metrics(
     if prediction_type is not None:
         prediction_type = PredictionType(prediction_type)
 
+
+    # Add these debug prints
+    print("y_true shape:", y_true.shape)
+    print("y_true sample:", y_true[:5])
+    print("y_pred shape:", y_pred.shape)
+    print("y_pred sample:", y_pred[:5])
+    print("prediction_type:", prediction_type)
+
     if task_type == TaskType.REGRESSION:
         assert prediction_type is None
         assert 'std' in y_info
@@ -66,6 +77,11 @@ def calculate_metrics(
         result = {'rmse': rmse}
     else:
         labels, probs = _get_labels_and_probs(y_pred, task_type, prediction_type)
+        
+        # Add these debug prints too
+        print("labels shape:", labels.shape)
+        print("labels sample:", labels[:5])
+        
         result = cast(
             Dict[str, Any], skm.classification_report(y_true, labels, output_dict=True)
         )

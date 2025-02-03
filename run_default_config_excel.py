@@ -124,6 +124,8 @@ print(f"X_num shape after prepare_tensors: {X_num['train'].shape}")
 if args.catenc: # if use CatBoostEncoder then drop original categorical features
     X_cat = None
 
+
+
 """ ORDER numerical features with MUTUAL INFORMATION """
 print(f"X_num shape before reorder: {X_num['train'].shape}")
 mi_cache_dir = 'cache/mi'
@@ -275,7 +277,7 @@ loss_fn = (
 
 """Utils Function"""
 def apply_model(x_num, x_cat=None, mixup=False):
-    print(f"apply_model x_num shape: {x_num.shape}")
+    # print(f"apply_model x_num shape: {x_num.shape}")
     if mixup:
         return model(x_num, x_cat, mixup=True, beta=args.beta, mtype=args.mix_type)
     return model(x_num, x_cat)
@@ -295,7 +297,7 @@ def evaluate(parts):
                 else batch
             )
             start = time.time()
-            print(f"x_num shape in evaluate: {x_num.shape}")
+            # print(f"x_num shape in evaluate: {x_num.shape}")
             predictions[part].append(apply_model(x_num, x_cat))
             infer_time += time.time() - start
         predictions[part] = torch.cat(predictions[part]).cpu().numpy()
@@ -329,14 +331,15 @@ init_score = evaluate(['test'])['test'][metric] # test before training
 print(f'Test score before training: {init_score: .4f}')
 
 losses, val_metric, test_metric = [], [], []
-n_epochs = 500 # default max training epoch
+n_epochs = 500 # default max training epoch #try 10-50 first, save local model
+# upload to group repo, maybe frank can help 
 
 # warmup and lr scheduler
 warm_up = 10 # warm up epoch
 scheduler = CosineAnnealingLR(optimizer=optimizer, T_max=n_epochs - warm_up) # lr decay
 max_lr = cfg['training']['lr']
-report_frequency = len(ys['train']) // batch_size // 3
-
+# report_frequency = len(ys['train']) // batch_size // 3
+report_frequency = 1
 # metric containers
 loss_holder = AverageMeter()
 best_score = -np.inf
@@ -369,7 +372,10 @@ for epoch in range(1, n_epochs + 1):
         start = time.time()
         optimizer.zero_grad()
         if args.mix_type == 'none': # no mixup
-            loss = loss_fn(apply_model(x_num, x_cat, mixup=False), y)
+            if dataset.is_binclass:
+                loss = loss_fn(preds[:, 1], y.float())  # Only use logit for positive class
+            else:
+                loss = loss_fn(preds, y)
         else:
             preds, feat_masks, shuffled_ids = apply_model(x_num, x_cat, mixup=True)
             if args.mix_type == 'feat_mix':
@@ -381,11 +387,17 @@ for epoch in range(1, n_epochs + 1):
             elif args.mix_type == 'niave_mix':
                 lambdas = feat_masks
                 lambdas2 = 1 - lambdas
+            
             if dataset.is_regression:
                 mix_y = lambdas * y + lambdas2 * y[shuffled_ids]
                 loss = loss_fn(preds, mix_y)
             else:
-                loss = lambdas * loss_fn(preds, y, reduction='none') + lambdas2 * loss_fn(preds, y[shuffled_ids], reduction='none')
+                if dataset.is_binclass:
+                    loss = lambdas * loss_fn(preds[:, 1], y.float(), reduction='none') + \
+                           lambdas2 * loss_fn(preds[:, 1], y[shuffled_ids].float(), reduction='none')
+                else:
+                    loss = lambdas * loss_fn(preds, y, reduction='none') + \
+                           lambdas2 * loss_fn(preds, y[shuffled_ids], reduction='none')
                 loss = loss.mean()
         loss.backward()
         optimizer.step()

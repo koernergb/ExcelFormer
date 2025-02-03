@@ -76,7 +76,7 @@ class Tokenizer(nn.Module):
 
     def forward(self, x_num: Tensor) -> Tensor:
         x_some = x_num
-        print(f"x_num shape: {x_num.shape}")
+        # print(f"x_num shape: {x_num.shape}")
         assert x_some is not None
         x1 = self.weight[None] * x_num[:, :, None] + self.bias[None]
         x2 = self.weight2[None] * x_num[:, :, None] + self.bias2[None]
