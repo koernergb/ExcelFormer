@@ -143,16 +143,23 @@ else:
     mi_scores = mi_func(dataset.X_num['train'], dataset.y['train']) # calculate MI
     print(f"mi_scores shape: {mi_scores.shape}")
     np.save(mi_cache_file, mi_scores)
-mi_ranks = np.argsort(-mi_scores)
-print(f"mi_ranks shape: {mi_ranks.shape}")
 
-print(f"Unique values in mi_ranks: {np.unique(mi_ranks)}")
-print(f"Number of unique values in mi_ranks: {len(np.unique(mi_ranks))}")
+# Add feature selection based on absolute MI threshold
+MI_THRESHOLD = 0.01
+significant_features = mi_scores >= MI_THRESHOLD
+mi_ranks = np.argsort(-mi_scores)[significant_features[np.argsort(-mi_scores)]]
 
-# reorder the feature with mutual information ranks
+print(f"Original number of features: {len(mi_scores)}")
+print(f"Number of features kept: {len(mi_ranks)} (MI score >= {MI_THRESHOLD})")
+
+# Reorder and filter the features with mutual information ranks
 X_num = {k: v[:, mi_ranks] for k, v in X_num.items()}
-# normalized mutual information for loss weight
-sorted_mi_scores = torch.from_numpy(mi_scores[mi_ranks] / mi_scores.sum()).float().to(device)
+# Normalized mutual information for loss weight (only for significant features)
+sorted_mi_scores = torch.from_numpy(mi_scores[mi_ranks] / mi_scores[mi_ranks].sum()).float().to(device)
+
+# Update n_num_features for model initialization
+n_num_features = len(mi_ranks)
+print(f"Updated n_num_features: {n_num_features}")
 """ END FEATURE REORDER """
 print(f"X_num shape after reorder: {X_num['train'].shape}")
 
@@ -212,8 +219,6 @@ dataloaders = {'train': train_loader, 'val': val_loader, 'test': test_loader}
 
 """ Prepare Model """
 # datset specific params
-n_num_features = dataset.n_num_features # drop some features
-print(f"n_num_features: {n_num_features}")
 cardinalities = dataset.get_category_sizes('train')
 n_categories = len(cardinalities)
 if args.catenc:
