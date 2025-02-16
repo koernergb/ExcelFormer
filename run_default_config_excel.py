@@ -1,3 +1,4 @@
+print("Entered training script...")
 import os
 import math
 import time
@@ -16,6 +17,13 @@ from category_encoders import CatBoostEncoder
 
 from bin import ExcelFormer
 from lib import Transformations, build_dataset, prepare_tensors, make_optimizer, DATA
+
+print("Passed imports...")
+print("CUDA available:", torch.cuda.is_available())
+print("CUDA device count:", torch.cuda.device_count())
+if torch.cuda.is_available():
+    print("Current CUDA device:", torch.cuda.current_device())
+    print("CUDA device name:", torch.cuda.get_device_name(0))
 
 
 DATASETS = [
