@@ -1,4 +1,5 @@
 print("Entered training script...")
+import sys
 import os
 import math
 import time
@@ -17,6 +18,26 @@ from category_encoders import CatBoostEncoder
 
 from bin import ExcelFormer
 from lib import Transformations, build_dataset, prepare_tensors, make_optimizer, DATA
+
+# Diagnostic information
+print("Python executable:", sys.executable)
+print("Python path:", sys.path)
+print("LD_LIBRARY_PATH:", os.environ.get('LD_LIBRARY_PATH', 'Not set'))
+print("CUDA_HOME:", os.environ.get('CUDA_HOME', 'Not set'))
+
+# Torch and CUDA details
+print("Torch version:", torch.__version__)
+print("Torch CUDA version:", torch.version.cuda)
+print("CUDA available:", torch.cuda.is_available())
+print("CUDA device count:", torch.cuda.device_count())
+
+# Check for CUDA devices
+import subprocess
+try:
+    nvidia_smi_output = subprocess.check_output(['nvidia-smi']).decode('utf-8')
+    print("nvidia-smi output:\n", nvidia_smi_output)
+except Exception as e:
+    print("Error running nvidia-smi:", e)
 
 print("Passed imports...")
 print("CUDA available:", torch.cuda.is_available())
@@ -43,6 +64,7 @@ def get_training_args():
     parser.add_argument("--mix_type", type=str, default='none', choices=['niave_mix', 'feat_mix', 'hidden_mix', 'none'], help='mixup type, set to "niave_mix" for naive mixup, set to "none" if no mixup')
     parser.add_argument("--save", action='store_true', help='whether to save model')
     parser.add_argument("--catenc", action='store_true', help='whether to use catboost encoder for categorical features')
+    parser.add_argument("--resume", type=str, default=None, help='path to checkpoint to resume from')
     args = parser.parse_args()
 
     args.output = f'{args.output}/mixup({args.mix_type})/{args.dataset}/{args.seed}'
@@ -355,16 +377,72 @@ max_lr = cfg['training']['lr']
 report_frequency = 1
 # metric containers
 loss_holder = AverageMeter()
+
+# Initialize epoch and best scores
+start_epoch = 1
 best_score = -np.inf
-final_test_score = -np.inf # final test score acquired by max validation set score
-best_test_score = -np.inf # best test score during running
-running_time = 0.
-
-# early stop
+final_test_score = -np.inf
+best_test_score = -np.inf
 no_improvement = 0
-EARLY_STOP = args.early_stop
 
-for epoch in range(1, n_epochs + 1):
+# Load checkpoint if resuming
+if args.resume is not None and os.path.exists(args.resume):
+    print(f"Loading checkpoint from {args.resume}")
+    checkpoint = torch.load(args.resume)
+    
+    # Check if this is a state_dict (old-style) or full checkpoint (new-style)
+    if isinstance(checkpoint, dict) and 'epoch' in checkpoint:  # New-style has 'epoch' key
+        # New-style checkpoint with full state
+        model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        scheduler.load_state_dict(checkpoint.get('scheduler_state_dict'))
+        start_epoch = checkpoint['epoch'] + 1
+        best_score = checkpoint.get('best_score', -np.inf)
+        best_test_score = checkpoint.get('best_test_score', -np.inf)
+        final_test_score = checkpoint.get('final_test_score', -np.inf)
+        no_improvement = checkpoint.get('no_improvement', 0)
+        losses = checkpoint.get('losses', losses)
+        val_metric = checkpoint.get('val_metric', val_metric)
+        test_metric = checkpoint.get('test_metric', test_metric)
+        running_time = checkpoint.get('running_time', 0.0)
+        print(f"Resuming from epoch {start_epoch} with full state")
+    else:
+        # Old-style checkpoint is just the model's state_dict
+        model.load_state_dict(checkpoint)
+        
+        # Get the current epoch from command line or environment variable
+        # You might want to add this as an argument if not already present
+        current_epoch = 50  # Replace with actual current epoch
+        
+        # Approximate the learning rate state
+        if current_epoch <= warm_up:
+            # If still in warmup, set appropriate warmup lr
+            lr = max_lr * current_epoch / warm_up
+            print(f"Approximating warmup learning rate: {lr}")
+            for param_group in optimizer.param_groups:
+                param_group['lr'] = lr
+        else:
+            # Fast-forward scheduler to current epoch
+            print(f"Fast-forwarding scheduler for {current_epoch - warm_up} steps")
+            for _ in range(current_epoch - warm_up):
+                scheduler.step()
+            
+        start_epoch = current_epoch + 1
+        # Initialize other state variables
+        best_score = -np.inf
+        best_test_score = -np.inf
+        final_test_score = -np.inf
+        no_improvement = 0
+        losses = []
+        val_metric = []
+        test_metric = []
+        running_time = 0.0
+        
+        print(f"Resuming from old-style checkpoint (model weights only)")
+        print(f"Approximated learning rate state for epoch {start_epoch}")
+        print(f"Current learning rate: {optimizer.param_groups[0]['lr']}")
+
+for epoch in range(start_epoch, n_epochs + 1):
     model.train()
     # warm up lr
     if warm_up > 0 and epoch <= warm_up:
@@ -428,17 +506,29 @@ for epoch in range(1, n_epochs + 1):
         best_score = val_score
         final_test_score = test_score
         print(' <<< BEST VALIDATION EPOCH')
-        # print('learned score: ')
-        # print(sorted_mi_scores)
         no_improvement = 0
         if args.save:
-            torch.save(model.state_dict(), f"{args.output}/pytorch_model.pt")
+            checkpoint = {
+                'epoch': epoch,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'scheduler_state_dict': scheduler.state_dict(),
+                'best_score': best_score,
+                'best_test_score': best_test_score,
+                'final_test_score': final_test_score,
+                'no_improvement': no_improvement,
+                'losses': losses,
+                'val_metric': val_metric,
+                'test_metric': test_metric,
+                'running_time': running_time
+            }
+            torch.save(checkpoint, f"{args.output}/pytorch_model.pt")
     else:
         no_improvement += 1
     if test_score > best_test_score:
         best_test_score = test_score
 
-    if no_improvement == EARLY_STOP:
+    if no_improvement == args.early_stop:
         break
         
 """Record Exp Results"""
