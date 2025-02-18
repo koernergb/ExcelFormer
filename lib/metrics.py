@@ -64,11 +64,11 @@ def calculate_metrics(
 
 
     # Add these debug prints
-    print("y_true shape:", y_true.shape)
-    print("y_true sample:", y_true[:5])
-    print("y_pred shape:", y_pred.shape)
-    print("y_pred sample:", y_pred[:5])
-    print("prediction_type:", prediction_type)
+    # print("y_true shape:", y_true.shape)
+    # print("y_true sample:", y_true[:5])
+    # print("y_pred shape:", y_pred.shape)
+    # print("y_pred sample:", y_pred[:5])
+    #print("prediction_type:", prediction_type)
 
     if task_type == TaskType.REGRESSION:
         assert prediction_type is None
@@ -79,8 +79,8 @@ def calculate_metrics(
         labels, probs = _get_labels_and_probs(y_pred, task_type, prediction_type)
         
         # Add these debug prints too
-        print("labels shape:", labels.shape)
-        print("labels sample:", labels[:5])
+        # print("labels shape:", labels.shape)
+        #print("labels sample:", labels[:5])
         
         result = cast(
             Dict[str, Any], skm.classification_report(y_true, labels, output_dict=True)

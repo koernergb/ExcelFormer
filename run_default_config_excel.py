@@ -1,4 +1,9 @@
 print("Entered training script...")
+# Go to great lakes and test best model on test set.
+# Figure out how to properly evaluate xgboost and excelformer. check paper - 70s%?
+# push code to lab github
+# draft email response to VT, post to slack
+# retrain xgboost with dropped features put in slack results. does mutual information ranking coincide with xgboost feature importance ranking? 
 import sys
 import os
 import math
@@ -269,7 +274,7 @@ default_model_configs = {
     'init_scale': 0.01, # param for the Attenuated Initialization
 }
 default_training_configs = {
-    'lr': 1e-4,
+    'lr': 1e-6,
     'weight_decay': 0.,
 }
 kwargs.update(default_model_configs) # update model configs
@@ -378,17 +383,27 @@ report_frequency = 1
 # metric containers
 loss_holder = AverageMeter()
 
-# Initialize epoch and best scores
+# Initialize variables before checkpoint loading
+running_time = 0.0
 start_epoch = 1
 best_score = -np.inf
 final_test_score = -np.inf
 best_test_score = -np.inf
 no_improvement = 0
+losses = []
+val_metric = []
+test_metric = []
+old_style = False
 
 # Load checkpoint if resuming
 if args.resume is not None and os.path.exists(args.resume):
     print(f"Loading checkpoint from {args.resume}")
     checkpoint = torch.load(args.resume)
+    
+    # Add debug prints
+    print(f"Checkpoint type: {type(checkpoint)}")
+    if isinstance(checkpoint, dict):
+        print(f"Checkpoint keys: {checkpoint.keys()}")
     
     # Check if this is a state_dict (old-style) or full checkpoint (new-style)
     if isinstance(checkpoint, dict) and 'epoch' in checkpoint:  # New-style has 'epoch' key
@@ -409,25 +424,8 @@ if args.resume is not None and os.path.exists(args.resume):
     else:
         # Old-style checkpoint is just the model's state_dict
         model.load_state_dict(checkpoint)
-        
-        # Get the current epoch from command line or environment variable
-        # You might want to add this as an argument if not already present
-        current_epoch = 50  # Replace with actual current epoch
-        
-        # Approximate the learning rate state
-        if current_epoch <= warm_up:
-            # If still in warmup, set appropriate warmup lr
-            lr = max_lr * current_epoch / warm_up
-            print(f"Approximating warmup learning rate: {lr}")
-            for param_group in optimizer.param_groups:
-                param_group['lr'] = lr
-        else:
-            # Fast-forward scheduler to current epoch
-            print(f"Fast-forwarding scheduler for {current_epoch - warm_up} steps")
-            for _ in range(current_epoch - warm_up):
-                scheduler.step()
-            
-        start_epoch = current_epoch + 1
+        old_style = True
+
         # Initialize other state variables
         best_score = -np.inf
         best_test_score = -np.inf
@@ -442,6 +440,28 @@ if args.resume is not None and os.path.exists(args.resume):
         print(f"Approximated learning rate state for epoch {start_epoch}")
         print(f"Current learning rate: {optimizer.param_groups[0]['lr']}")
 
+
+if old_style:
+    # Get the current epoch from command line or environment variable
+    # You might want to add this as an argument if not already present
+    current_epoch = 50  # Replace with actual current epoch
+    
+    # Approximate the learning rate state
+    if current_epoch <= warm_up:
+        # If still in warmup, set appropriate warmup lr
+        lr = max_lr * current_epoch / warm_up
+        print(f"Approximating warmup learning rate: {lr}")
+        for param_group in optimizer.param_groups:
+            param_group['lr'] = lr
+    else:
+        # Fast-forward scheduler to current epoch
+        print(f"Fast-forwarding scheduler for {current_epoch - warm_up} steps")
+        for _ in range(current_epoch - warm_up):
+            scheduler.step()
+        
+    start_epoch = current_epoch + 1
+    
+print(f"Starting training from epoch {start_epoch}")
 for epoch in range(start_epoch, n_epochs + 1):
     model.train()
     # warm up lr
@@ -458,7 +478,7 @@ for epoch in range(start_epoch, n_epochs + 1):
             if len(batch) == 2
             else batch
         )
-        print(f"x_num shape in training block: {x_num.shape}")
+        # print(f"x_num shape in training block: {x_num.shape}")
 
         start = time.time()
         optimizer.zero_grad()
@@ -491,11 +511,17 @@ for epoch in range(start_epoch, n_epochs + 1):
                            lambdas2 * loss_fn(preds, y[shuffled_ids], reduction='none')
                 loss = loss.mean()
         loss.backward()
+        # Add gradient clipping before optimizer step
+        max_grad_norm = 1.0  # Add this near other hyperparameters
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_grad_norm)
         optimizer.step()
         running_time += time.time() - start
         loss_holder.update(loss.item(), len(ys))
-        if iteration % report_frequency == 0:
-            print(f'(epoch) {epoch} (batch) {iteration} (loss) {loss_holder.val:.4f} (avg_loss) {loss_holder.avg:.4f}')
+        # if iteration % report_frequency == 0:
+        #     print(f'(epoch) {epoch} (batch) {iteration} (loss) {loss_holder.val:.4f} (avg_loss) {loss_holder.avg:.4f}')
+
+    # Print average loss at the end of each epoch
+    print(f'Epoch {epoch:03d} | Average Loss: {loss_holder.avg:.4f} | Current LR: {optimizer.param_groups[0]["lr"]:.6f}')
     losses.append(loss_holder.avg)
     loss_holder.reset()
     scores = evaluate(['val', 'test'])
