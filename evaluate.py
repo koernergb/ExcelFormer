@@ -63,6 +63,7 @@ def main():
     # Convert to float32
     if dataset.X_num['test'].dtype == np.float64:
         dataset.X_num['test'] = dataset.X_num['test'].astype(np.float32)
+        dataset.X_num['val'] = dataset.X_num['val'].astype(np.float32)
     
     # Debug categorical encoding
     print("\n=== Categorical Encoding Debug ===")
@@ -76,14 +77,21 @@ def main():
             return_df=False
         ).fit(dataset.X_cat['train'], dataset.y['train'])
         
-        encoded_cat = enc.transform(dataset.X_cat['test']).astype(np.float32)
-        print(f"Encoded categorical shape: {encoded_cat.shape}")
+        # Encode both test and validation sets
+        encoded_cat_test = enc.transform(dataset.X_cat['test']).astype(np.float32)
+        encoded_cat_val = enc.transform(dataset.X_cat['val']).astype(np.float32)
+        
+        print(f"Encoded categorical shape: {encoded_cat_test.shape}")
         print(f"Current numerical shape: {dataset.X_num['test'].shape}")
         
-        # Concatenate and verify
+        # Concatenate for both sets
         dataset.X_num['test'] = np.concatenate([
-            encoded_cat,
+            encoded_cat_test,
             dataset.X_num['test']
+        ], axis=1)
+        dataset.X_num['val'] = np.concatenate([
+            encoded_cat_val,
+            dataset.X_num['val']
         ], axis=1)
         print(f"Final concatenated shape: {dataset.X_num['test'].shape}")
     
@@ -113,8 +121,9 @@ def main():
         feature_name = all_features[idx]
         print(f"Feature {idx} ({feature_name}): MI={mi_scores[idx]:.4f}")
     
-    # 4. Select features using same indices
+    # 4. Select features using same indices for both sets
     dataset.X_num['test'] = dataset.X_num['test'][:, mi_ranks]
+    dataset.X_num['val'] = dataset.X_num['val'][:, mi_ranks]
     print(f"Final feature shape: {dataset.X_num['test'].shape}\n")
     
     # Now prepare tensors and evaluate
@@ -139,7 +148,6 @@ def main():
         init_scale=0.01,
     ).to(device)
 
-    # After loading checkpoint but before processing data
     print(f"\nModel weight dtype: {next(model.parameters()).dtype}")
 
     # Convert to float32 consistently
@@ -149,44 +157,73 @@ def main():
     model.load_state_dict(checkpoint['model_state_dict'])
     model.eval()
     
-    # Evaluate
-    print("\nEvaluating test set:")
+    # Evaluate both validation and test sets
+    print("\nEvaluating validation and test sets:")
+    
+    # Create datasets for both
+    val_dataset = TensorDataset(
+        torch.tensor(dataset.X_num['val'], dtype=torch.float32).to(device),
+        torch.tensor(dataset.y['val'], dtype=torch.float32).to(device)
+    )
     test_dataset = TensorDataset(X_num_test, y_test)
+    
+    val_loader = DataLoader(val_dataset, batch_size=1024, shuffle=False)
     test_loader = DataLoader(test_dataset, batch_size=1024, shuffle=False)
     
-    predictions = []
+    # Get predictions for both sets
+    predictions_val = []
+    predictions_test = []
     with torch.inference_mode():
+        for batch in tqdm(val_loader, desc="Processing validation set"):
+            x_num, _ = batch
+            pred = model(x_num, None)
+            predictions_val.append(pred)
+            
         for batch in tqdm(test_loader, desc="Processing test set"):
             x_num, _ = batch
             pred = model(x_num, None)
-            predictions.append(pred)
+            predictions_test.append(pred)
     
-    predictions = torch.cat(predictions).cpu().numpy()
+    predictions_val = torch.cat(predictions_val).cpu().numpy()
+    predictions_test = torch.cat(predictions_test).cpu().numpy()
     
-    # Calculate metrics and ROC curve
-    y_pred_proba = torch.softmax(torch.tensor(predictions), dim=1).numpy()[:, 1]  # Get positive class probability
-    fpr, tpr, _ = roc_curve(y_test.cpu().numpy(), y_pred_proba)
-    roc_auc = roc_auc_score(y_test.cpu().numpy(), y_pred_proba)
+    # Calculate probabilities and ROC curves for both sets
+    y_val_proba = torch.softmax(torch.tensor(predictions_val), dim=1).numpy()[:, 1]
+    y_test_proba = torch.softmax(torch.tensor(predictions_test), dim=1).numpy()[:, 1]
     
-    # Plot ROC curve
+    fpr_val, tpr_val, _ = roc_curve(dataset.y['val'], y_val_proba)
+    fpr_test, tpr_test, _ = roc_curve(y_test.cpu().numpy(), y_test_proba)
+    
+    roc_auc_val = roc_auc_score(dataset.y['val'], y_val_proba)
+    roc_auc_test = roc_auc_score(y_test.cpu().numpy(), y_test_proba)
+    
+    # Plot both ROC curves
     plt.figure(figsize=(10, 8))
-    plt.plot(fpr, tpr, color='blue', lw=2, label=f'ROC curve (AUC = {roc_auc:.3f})')
+    plt.plot(fpr_val, tpr_val, color='blue', lw=2, label=f'Validation ROC (AUC = {roc_auc_val:.3f})')
+    plt.plot(fpr_test, tpr_test, color='red', lw=2, label=f'Test ROC (AUC = {roc_auc_test:.3f})')
     plt.plot([0, 1], [0, 1], color='gray', lw=2, linestyle='--')
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.05])
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
-    plt.title('ROC Curve')
+    plt.title('ROC Curves - Validation vs Test')
     plt.legend(loc="lower right")
     plt.grid(True)
-    plt.savefig('roc_curve.png')
-    plt.show()  # This will display the plot
+    plt.savefig('roc_curves_comparison.png')
+    plt.show()
     
-    # Calculate and print metrics
+    # Calculate and print metrics for both sets
     metrics = dataset.calculate_metrics(
-        {'test': predictions},
+        {
+            'val': predictions_val,
+            'test': predictions_test
+        },
         prediction_type='logits'
     )
+    
+    print("\nVALIDATION SET METRICS:")
+    print(f"ROC AUC: {metrics['val']['roc_auc']:.4f}")
+    print(f"Accuracy: {metrics['val']['accuracy']:.4f}")
     
     print("\nTEST SET METRICS:")
     print(f"ROC AUC: {metrics['test']['roc_auc']:.4f}")
