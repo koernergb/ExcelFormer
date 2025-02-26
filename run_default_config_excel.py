@@ -211,8 +211,31 @@ print(f"Features selected (MI >= {MI_THRESHOLD}): {mi_ranks}")
 print(f"Number of features: Original={len(mi_scores)}, Selected={len(mi_ranks)}")
 print("=== End Analysis ===\n")
 
-# You can exit here to just see the feature selection
-sys.exit()  # Remove this line when you want to continue with training
+# After MI selection but before model creation (around line 213)
+print("\n=== Final Feature List for Training ===")
+print(f"Total selected features: {len(mi_ranks)}")
+
+# Get feature names in order
+all_features = (dataset.cat_feature_names or []) + (dataset.num_feature_names or [])
+selected_features = [all_features[i] for i in mi_ranks]
+
+# Count feature types
+num_features = len([f for f in selected_features if f in dataset.num_feature_names]) if dataset.num_feature_names else 0
+cat_features = len([f for f in selected_features if f in dataset.cat_feature_names]) if dataset.cat_feature_names else 0
+
+print("\nFeature counts:")
+print(f"Total selected features: {len(selected_features)}")
+print(f"Numerical features: {num_features}")
+print(f"Categorical features: {cat_features}")
+
+print("\nFeatures in order:")
+for i, feature in enumerate(selected_features, 1):
+    print(f"{i}. {feature}")
+
+print("\nStarting training...")
+
+# Remove the sys.exit() line if you want to continue with training
+# sys.exit()  # Comment this out to proceed with training
 
 # set batch size
 batch_size_dict = {
@@ -290,7 +313,7 @@ default_model_configs = {
     'init_scale': 0.01, # param for the Attenuated Initialization
 }
 default_training_configs = {
-    'lr': 1e-6,
+    'lr': 1e-4,
     'weight_decay': 0.,
 }
 kwargs.update(default_model_configs) # update model configs
@@ -499,6 +522,7 @@ for epoch in range(start_epoch, n_epochs + 1):
         start = time.time()
         optimizer.zero_grad()
         if args.mix_type == 'none': # no mixup
+            preds = apply_model(x_num, x_cat)
             if dataset.is_binclass:
                 loss = loss_fn(preds[:, 1], y.float())  # Only use logit for positive class
             else:
