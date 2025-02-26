@@ -1,0 +1,191 @@
+(env) koernerg@BISGINLINUX-01:~/excelformer/ExcelFormer$ python3 evaluate.py 
+Using device: cuda
+Loading model from: ./result/ExcelFormer/default/mixup(hidden_mix)/android_security/42/500/pytorch_model.pt
+
+Saved Metrics from Training:
+Best validation score: 0.8180
+Best test score: 0.8167
+Final test score: 0.8166
+Loading data from: /home/umflint.edu/koernerg/excelformer/ExcelFormer/DATA/android_security
+Initial DataFrame shape: (870514, 50)
+Shape after dropping NaNs: (724160, 50)
+Column names: ['Unnamed: 0', 'pkgname', 'DevRegisteredDomain', 'LenDescription', 'LenWhatsNew', 'ReviewsAverage', 'CurrentVersion', 'Genre', 'ContentRating', 'LastUpdated', 'LenTitle', 'AndroidVersion', 'DeveloperCategory', 'isSpamming', 'net', 'intent', 'bluetooth', 'app', 'provider', 'speech', 'nfc', 'media', 'hardware', 'google', 'os', 'CALENDAR', 'CAMERA', 'CONTACTS', 'LOCATION', 'MICROPHONE', 'PHONE', 'SENSORS', 'SMS', 'STORAGE', 'FourStarRatings', 'ThreeStarRatings', 'FiveStarRatings', 'OneStarRatings', 'TwoStarRatings', 'lowest_android_version', 'highest_android_version', 'paid', 'file_size', 'max_downloads_log', 'developer_email', 'privacy_policy_link', 'developer_address', 'developer_website', 'days_since_last_update']
+Feature types: Unnamed: 0                   int64
+pkgname                     object
+DevRegisteredDomain          int64
+LenDescription               int64
+LenWhatsNew                  int64
+ReviewsAverage             float64
+CurrentVersion              object
+Genre                       object
+ContentRating               object
+LastUpdated                  int64
+LenTitle                     int64
+AndroidVersion              object
+DeveloperCategory           object
+isSpamming                   int64
+net                          int64
+intent                       int64
+bluetooth                    int64
+app                          int64
+provider                     int64
+speech                       int64
+nfc                          int64
+media                        int64
+hardware                     int64
+google                       int64
+os                           int64
+CALENDAR                     int64
+CAMERA                       int64
+CONTACTS                     int64
+LOCATION                     int64
+MICROPHONE                   int64
+PHONE                        int64
+SENSORS                      int64
+SMS                          int64
+STORAGE                      int64
+FourStarRatings            float64
+ThreeStarRatings           float64
+FiveStarRatings            float64
+OneStarRatings             float64
+TwoStarRatings             float64
+lowest_android_version      object
+highest_android_version     object
+paid                         int64
+file_size                    int64
+max_downloads_log          float64
+developer_email              int64
+privacy_policy_link          int64
+developer_address            int64
+developer_website            int64
+days_since_last_update       int64
+dtype: object
+Train indices: [ 98326 469033 379988 ... 733260 168590 327807]
+Validation indices: [160409 405137 340273 ... 166702 381745 626917]
+Test indices: [505635 798256 100364 ... 439765 460743 630369]
+
+=== Initial Data Analysis ===
+Number of samples: 108624
+Number of features: 49
+Class distribution: [49516 59108]
+
+=== Feature Processing Details ===
+Number of numerical features: 41
+Number of categorical features: 8
+
+=== Initial Feature Shapes ===
+Initial numerical features: (108624, 41)
+Initial categorical features: (108624, 8)
+
+=== Categorical Encoding Debug ===
+args.catenc: True
+dataset.X_cat is not None: True
+Cardinalities: [506912, 1337, 165, 6, 84, 4, 13, 5]
+Encoded categorical shape: (108624, 8)
+Current numerical shape: (108624, 41)
+Final concatenated shape: (108624, 49)
+
+Shape after categorical encoding: (108624, 49)
+Loaded MI scores shape: (49,)
+
+=== MI Selection Analysis ===
+Total features before selection: 49
+Number of features to select: 27
+Features sorted by MI score:
+Feature 8 (Unnamed: 0): MI=0.2774
+Feature 3 (ContentRating): MI=0.0551
+Feature 13 (LastUpdated): MI=0.0514
+Feature 48 (days_since_last_update): MI=0.0507
+Feature 7 (highest_android_version): MI=0.0442
+Feature 0 (pkgname): MI=0.0414
+Feature 45 (privacy_policy_link): MI=0.0408
+Feature 1 (CurrentVersion): MI=0.0322
+Feature 40 (TwoStarRatings): MI=0.0312
+Feature 15 (isSpamming): MI=0.0299
+Feature 39 (OneStarRatings): MI=0.0281
+Feature 36 (FourStarRatings): MI=0.0275
+Feature 37 (ThreeStarRatings): MI=0.0274
+Feature 43 (max_downloads_log): MI=0.0266
+Feature 6 (lowest_android_version): MI=0.0236
+Feature 11 (LenWhatsNew): MI=0.0220
+Feature 38 (FiveStarRatings): MI=0.0220
+Feature 35 (STORAGE): MI=0.0219
+Feature 4 (AndroidVersion): MI=0.0208
+Feature 46 (developer_address): MI=0.0192
+Feature 47 (developer_website): MI=0.0190
+Feature 30 (LOCATION): MI=0.0177
+Feature 32 (PHONE): MI=0.0164
+Feature 17 (intent): MI=0.0161
+Feature 5 (DeveloperCategory): MI=0.0152
+Feature 2 (Genre): MI=0.0123
+Feature 12 (ReviewsAverage): MI=0.0111
+Feature 28 (CAMERA): MI=0.0097
+Feature 29 (CONTACTS): MI=0.0089
+Feature 10 (LenDescription): MI=0.0084
+Feature 34 (SMS): MI=0.0050
+Feature 31 (MICROPHONE): MI=0.0047
+Feature 16 (net): MI=0.0024
+Feature 42 (file_size): MI=0.0022
+Feature 27 (CALENDAR): MI=0.0021
+Feature 18 (bluetooth): MI=0.0017
+Feature 23 (media): MI=0.0017
+Feature 14 (LenTitle): MI=0.0016
+Feature 20 (provider): MI=0.0012
+Feature 44 (developer_email): MI=0.0011
+Feature 26 (os): MI=0.0009
+Feature 21 (speech): MI=0.0006
+Feature 24 (hardware): MI=0.0002
+Feature 33 (SENSORS): MI=0.0001
+Feature 41 (paid): MI=0.0000
+Feature 9 (DevRegisteredDomain): MI=0.0000
+Feature 19 (app): MI=0.0000
+Feature 22 (nfc): MI=0.0000
+Feature 25 (google): MI=0.0000
+
+Selected feature indices and names:
+Feature 8 (Unnamed: 0): MI=0.2774
+Feature 3 (ContentRating): MI=0.0551
+Feature 13 (LastUpdated): MI=0.0514
+Feature 48 (days_since_last_update): MI=0.0507
+Feature 7 (highest_android_version): MI=0.0442
+Feature 0 (pkgname): MI=0.0414
+Feature 45 (privacy_policy_link): MI=0.0408
+Feature 1 (CurrentVersion): MI=0.0322
+Feature 40 (TwoStarRatings): MI=0.0312
+Feature 15 (isSpamming): MI=0.0299
+Feature 39 (OneStarRatings): MI=0.0281
+Feature 36 (FourStarRatings): MI=0.0275
+Feature 37 (ThreeStarRatings): MI=0.0274
+Feature 43 (max_downloads_log): MI=0.0266
+Feature 6 (lowest_android_version): MI=0.0236
+Feature 11 (LenWhatsNew): MI=0.0220
+Feature 38 (FiveStarRatings): MI=0.0220
+Feature 35 (STORAGE): MI=0.0219
+Feature 4 (AndroidVersion): MI=0.0208
+Feature 46 (developer_address): MI=0.0192
+Feature 47 (developer_website): MI=0.0190
+Feature 30 (LOCATION): MI=0.0177
+Feature 32 (PHONE): MI=0.0164
+Feature 17 (intent): MI=0.0161
+Feature 5 (DeveloperCategory): MI=0.0152
+Feature 2 (Genre): MI=0.0123
+Feature 12 (ReviewsAverage): MI=0.0111
+Final feature shape: (108624, 27)
+
+d_numerical: 27
+weight shape: torch.Size([27, 256])
+bias shape: torch.Size([27, 256])
+
+Model weight dtype: torch.float32
+
+Evaluating validation and test sets:
+Processing validation set: 100%|████| 107/107 [00:01<00:00, 81.71it/s]
+Processing test set: 100%|██████████| 107/107 [00:01<00:00, 77.74it/s]
+
+VALIDATION SET METRICS:
+ROC AUC: 0.8180
+Accuracy: 0.7346
+
+TEST SET METRICS:
+ROC AUC: 0.8166
+Accuracy: 0.7339
