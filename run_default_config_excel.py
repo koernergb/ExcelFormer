@@ -313,7 +313,7 @@ default_model_configs = {
     'init_scale': 0.01, # param for the Attenuated Initialization
 }
 default_training_configs = {
-    'lr': 1e-4,
+    'lr': 1e-2,  # Increase from 1e-3 to 1e-2
     'weight_decay': 0.,
 }
 kwargs.update(default_model_configs) # update model configs
@@ -414,8 +414,12 @@ n_epochs = 500 # default max training epoch #try 10-50 first, save local model
 # upload to group repo, maybe frank can help 
 
 # warmup and lr scheduler
-warm_up = 10 # warm up epoch
-scheduler = CosineAnnealingLR(optimizer=optimizer, T_max=n_epochs - warm_up) # lr decay
+warm_up = 5  # Reduce from 10 to 5
+scheduler = CosineAnnealingLR(
+    optimizer=optimizer, 
+    T_max=n_epochs - warm_up,
+    eta_min=1e-6  # Add minimum learning rate
+)
 max_lr = cfg['training']['lr']
 # report_frequency = len(ys['train']) // batch_size // 3
 report_frequency = 1
@@ -503,6 +507,8 @@ if old_style:
 print(f"Starting training from epoch {start_epoch}")
 for epoch in range(start_epoch, n_epochs + 1):
     model.train()
+    epoch_start = time.time()
+    
     # warm up lr
     if warm_up > 0 and epoch <= warm_up:
         lr = max_lr * epoch / warm_up
@@ -557,17 +563,27 @@ for epoch in range(start_epoch, n_epochs + 1):
         optimizer.step()
         running_time += time.time() - start
         loss_holder.update(loss.item(), len(ys))
-        # if iteration % report_frequency == 0:
-        #     print(f'(epoch) {epoch} (batch) {iteration} (loss) {loss_holder.val:.4f} (avg_loss) {loss_holder.avg:.4f}')
+        # Add progress prints
+        if iteration % report_frequency == 0:
+            print(f'Epoch {epoch:03d} | Batch {iteration} | Loss: {loss_holder.val:.4f} | LR: {optimizer.param_groups[0]["lr"]:.6f}')
 
-    # Print average loss at the end of each epoch
-    print(f'Epoch {epoch:03d} | Average Loss: {loss_holder.avg:.4f} | Current LR: {optimizer.param_groups[0]["lr"]:.6f}')
-    losses.append(loss_holder.avg)
-    loss_holder.reset()
+    # Print epoch summary
+    epoch_time = time.time() - epoch_start
+    print(f'\nEpoch {epoch:03d} Summary:')
+    print(f'Average Loss: {loss_holder.avg:.4f}')
+    print(f'Learning Rate: {optimizer.param_groups[0]["lr"]:.6f}')
+    print(f'Time: {epoch_time:.2f}s')
+    
+    # Evaluate and print metrics
     scores = evaluate(['val', 'test'])
     val_score, test_score = scores['val'][metric], scores['test'][metric]
+    print(f'Validation score: {val_score:.4f}')
+    print(f'Test score: {test_score:.4f}')
+    print('-' * 50)
+
+    losses.append(loss_holder.avg)
+    loss_holder.reset()
     val_metric.append(val_score), test_metric.append(test_score)
-    print(f'Epoch {epoch:03d} | Validation score: {val_score:.4f} | Test score: {test_score:.4f}', end='')
     if val_score > best_score:
         best_score = val_score
         final_test_score = test_score
