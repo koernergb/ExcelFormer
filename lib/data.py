@@ -75,9 +75,11 @@ class Dataset:
         df = pd.read_csv(dir_ / 'corrected_permacts.csv')
         print(f"Initial DataFrame shape: {df.shape}")
         
-        # Drop rows with NaN values
+        # Drop rows with NaN values and remove Unnamed: 0 column
         df = df.dropna()
-        print(f"Shape after dropping NaNs: {df.shape}")
+        if 'Unnamed: 0' in df.columns:
+            df = df.drop('Unnamed: 0', axis=1)  # Remove the problematic index column
+        print(f"Shape after dropping NaNs and Unnamed:0: {df.shape}")
         # df = df.head(500)
 
         # Ensure there are no NaNs in numeric columns
