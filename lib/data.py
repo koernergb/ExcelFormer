@@ -63,16 +63,21 @@ class Dataset:
     y_info: Dict[str, Any]
     task_type: TaskType
     n_classes: Optional[int]
+    num_feature_names: Optional[List[str]] = None
+    cat_feature_names: Optional[List[str]] = None
 
     @classmethod
     def from_dir(cls, dir_: Union[Path, str]) -> 'Dataset':
         dir_ = Path(dir_)
         
         # Load Android security data
+        print(f"Loading data from: {dir_}")
         df = pd.read_csv(dir_ / 'corrected_permacts.csv')
+        print(f"Initial DataFrame shape: {df.shape}")
         
         # Drop rows with NaN values
         df = df.dropna()
+        print(f"Shape after dropping NaNs: {df.shape}")
         # df = df.head(500)
 
         # Ensure there are no NaNs in numeric columns
@@ -83,6 +88,9 @@ class Dataset:
         X = df.drop(['status'], axis=1)
         y = df['status']
         
+        print("Column names:", list(X.columns))  # Add this to see what features we have
+        print("Feature types:", X.dtypes)  # Add this to see feature types
+        
         # Create train/val/test splits
         X_train, X_temp, y_train, y_temp = train_test_split(
             X, y, test_size=0.3, random_state=42, stratify=y
@@ -91,6 +99,21 @@ class Dataset:
             X_temp, y_temp, test_size=0.5, random_state=42, stratify=y_temp
         )
         
+
+        # Add this code to print indices
+        print("Train indices:", X_train.index.values)
+        print("Validation indices:", X_val.index.values) 
+        print("Test indices:", X_test.index.values)
+
+        # Optionally save indices to files
+        np.save('train_indices.npy', X_train.index.values)
+        np.save('val_indices.npy', X_val.index.values)
+        np.save('test_indices.npy', X_test.index.values)
+
+        # Store feature names before converting to numpy arrays
+        num_features = X.select_dtypes(include=['int64', 'float64']).columns.tolist()
+        cat_features = X.select_dtypes(include=['object']).columns.tolist()
+
         # Format data for model
         X_num = {
             'train': X_train.select_dtypes(include=['int64', 'float64']).values.astype(np.float32),
@@ -116,7 +139,9 @@ class Dataset:
             y=y_dict,
             y_info={},
             task_type=TaskType.BINCLASS,
-            n_classes=2
+            n_classes=2,
+            num_feature_names=num_features,
+            cat_feature_names=cat_features
         )
 
     @property

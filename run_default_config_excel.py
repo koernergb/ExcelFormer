@@ -195,8 +195,24 @@ sorted_mi_scores = torch.from_numpy(mi_scores[mi_ranks] / mi_scores[mi_ranks].su
 # Update n_num_features for model initialization
 n_num_features = len(mi_ranks)
 print(f"Updated n_num_features: {n_num_features}")
-""" END FEATURE REORDER """
-print(f"X_num shape after reorder: {X_num['train'].shape}")
+
+# Add these debug prints right after the MI calculation and feature selection
+print("\n=== Feature Selection Debug ===")
+print(f"Original features shape: {dataset.X_num['train'].shape}")
+print(f"MI scores shape: {mi_scores.shape}")
+print(f"Selected feature indices (mi_ranks): {mi_ranks}")
+print(f"Number of selected features: {len(mi_ranks)}")
+print("=== End Debug ===\n")
+
+# After MI calculation but before model creation
+print("\n=== Mutual Information Feature Analysis ===")
+print(f"MI scores for all features: {mi_scores}")
+print(f"Features selected (MI >= {MI_THRESHOLD}): {mi_ranks}")
+print(f"Number of features: Original={len(mi_scores)}, Selected={len(mi_ranks)}")
+print("=== End Analysis ===\n")
+
+# You can exit here to just see the feature selection
+sys.exit()  # Remove this line when you want to continue with training
 
 # set batch size
 batch_size_dict = {
