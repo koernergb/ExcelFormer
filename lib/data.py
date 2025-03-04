@@ -78,9 +78,11 @@ class Dataset:
         # Drop rows with NaN values and remove Unnamed: 0 column
         df = df.dropna()
         if 'Unnamed: 0' in df.columns:
-            df = df.drop('Unnamed: 0', axis=1)  # Remove the problematic index column
-        print(f"Shape after dropping NaNs and Unnamed:0: {df.shape}")
+           df = df.drop('Unnamed: 0', axis=1)  # Remove the problematic index column
+        print(f"Shape after dropping NaNs: {df.shape}")
+        df = df.drop(['pkgname'], axis=1)
         # df = df.head(500)
+        
 
         # Ensure there are no NaNs in numeric columns
         # print("Columns with NaNs after dropna():")

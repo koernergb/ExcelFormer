@@ -23,7 +23,10 @@ from lib import Transformations, build_dataset, prepare_tensors, make_optimizer,
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model_path", type=str, default='./result/ExcelFormer/default/mixup(hidden_mix)/android_security/42/500/pytorch_model.pt')
+    # With 25 features (no unnamed: 0 or pkgname)
+    parser.add_argument("--model_path", type=str, default='./result/ExcelFormer/default/mixup(none)/android_security/42/pytorch_model.pt')
+    # Original with wrong features
+    # parser.add_argument("--model_path", type=str, default='./result/ExcelFormer/default/mixup(hidden_mix)/android_security/42/500/pytorch_model.pt')
     parser.add_argument("--dataset", type=str, default='android_security')
     parser.add_argument("--normalization", type=str, default='quantile')
     parser.add_argument("--catenc", action='store_true', default=True)

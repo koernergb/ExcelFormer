@@ -4,6 +4,19 @@ print("Entered training script...")
 # push code to lab github
 # draft email response to VT, post to slack
 # retrain xgboost with dropped features put in slack results. does mutual information ranking coincide with xgboost feature importance ranking? 
+
+# distribution difference between columns in corrected_permacts and earlier dataset
+# confirm names havent changed
+# numeric: averages, categorical: count
+# make figures
+# old dataset is with original paper
+# we need to be 100% sure about making the training replicable - so be clear about all the input parameters that 
+# lead to the results
+# we should do a diff with original excelformer repo to justify every change we made
+# we should also walk through a checklist of loading, preprocessing, dropping features, encoding them,
+# then the main script's MI score and feature selection, ensure that model is trained with correct input
+# we should possibly do loss graphs
+# selected_features object trace - does the model load the correct features? Yes, it does.
 import sys
 import os
 import math
@@ -64,7 +77,8 @@ def get_training_args():
     parser.add_argument("--dataset", type=str)
     parser.add_argument("--normalization", type=str, default='quantile')
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--early_stop", type=int, default=200)
+    parser.add_argument("--early_stop", type=int, default=20)
+    parser.add_argument("--min_delta", type=float, default=0.001)
     parser.add_argument("--beta", type=float, default=0.5, help='hyper-parameter of Beta Distribution in mixup, we choose 0.5 for all datasets in default config')
     parser.add_argument("--mix_type", type=str, default='none', choices=['niave_mix', 'feat_mix', 'hidden_mix', 'none'], help='mixup type, set to "niave_mix" for naive mixup, set to "none" if no mixup')
     parser.add_argument("--save", action='store_true', help='whether to save model')
@@ -206,6 +220,14 @@ print("=== End Debug ===\n")
 
 # After MI calculation but before model creation
 print("\n=== Mutual Information Feature Analysis ===")
+all_features = (dataset.cat_feature_names or []) + (dataset.num_feature_names or [])
+feature_mi_pairs = list(zip(all_features, mi_scores))
+feature_mi_pairs.sort(key=lambda x: x[1], reverse=True)
+
+print("\nFeatures ranked by MI score:")
+for feature, mi in feature_mi_pairs:
+    print(f"{feature}: {mi:.4f}")
+
 print(f"MI scores for all features: {mi_scores}")
 print(f"Features selected (MI >= {MI_THRESHOLD}): {mi_ranks}")
 print(f"Number of features: Original={len(mi_scores)}, Selected={len(mi_ranks)}")
@@ -313,8 +335,8 @@ default_model_configs = {
     'init_scale': 0.01, # param for the Attenuated Initialization
 }
 default_training_configs = {
-    'lr': 1e-2,  # Increase from 1e-3 to 1e-2
-    'weight_decay': 0.,
+    'lr': 1e-3,  # Much lower than current 2e-3
+    'weight_decay': 1e-5,
 }
 kwargs.update(default_model_configs) # update model configs
 cfg['training'].update(default_training_configs) # update training configs
@@ -414,15 +436,15 @@ n_epochs = 500 # default max training epoch #try 10-50 first, save local model
 # upload to group repo, maybe frank can help 
 
 # warmup and lr scheduler
-warm_up = 5  # Reduce from 10 to 5
+warm_up = 10  # Longer warmup than current 5
 scheduler = CosineAnnealingLR(
     optimizer=optimizer, 
     T_max=n_epochs - warm_up,
-    eta_min=1e-6  # Add minimum learning rate
+    eta_min=0
 )
 max_lr = cfg['training']['lr']
 # report_frequency = len(ys['train']) // batch_size // 3
-report_frequency = 1
+report_frequency = len(train_loader)  # This will make it print only at the end of each epoch
 # metric containers
 loss_holder = AverageMeter()
 
@@ -584,10 +606,10 @@ for epoch in range(start_epoch, n_epochs + 1):
     losses.append(loss_holder.avg)
     loss_holder.reset()
     val_metric.append(val_score), test_metric.append(test_score)
-    if val_score > best_score:
+    if val_score > (best_score + args.min_delta):
         best_score = val_score
         final_test_score = test_score
-        print(' <<< BEST VALIDATION EPOCH')
+        print(f' <<< BEST VALIDATION EPOCH: {val_score:.4f}')
         no_improvement = 0
         if args.save:
             checkpoint = {
