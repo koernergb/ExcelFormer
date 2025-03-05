@@ -1,0 +1,14 @@
+DATA/
+result/
+cache/
+env/
+*.pyc
+*.pyo
+*.pyd
+*.pyw
+*.pyz
+*.png
+*.txt
+*.npy
+*.bin
+*.bin.gz
