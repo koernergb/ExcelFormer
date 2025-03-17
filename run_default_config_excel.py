@@ -176,11 +176,13 @@ if args.catenc: # if use CatBoostEncoder then drop original categorical features
 
 
 """ ORDER numerical features with MUTUAL INFORMATION """
+# Remove or comment out the MI feature selection section
+"""
 print(f"X_num shape before reorder: {X_num['train'].shape}")
 mi_cache_dir = 'cache/mi'
 if not os.path.isdir(mi_cache_dir):
     os.makedirs(mi_cache_dir)
-mi_cache_file = f'{mi_cache_dir}/{args.dataset}.npy' # cache to save mutual information
+mi_cache_file = f'{mi_cache_dir}/{args.dataset}.npy'
 if os.path.exists(mi_cache_file):
     os.remove(mi_cache_file)
 if os.path.exists(mi_cache_file):
@@ -189,7 +191,7 @@ if os.path.exists(mi_cache_file):
 else:
     mi_func = mutual_info_regression if dataset.is_regression else mutual_info_classif
     print(f"x_num shape in mi_func: {dataset.X_num['train'].shape}")
-    mi_scores = mi_func(dataset.X_num['train'], dataset.y['train']) # calculate MI
+    mi_scores = mi_func(dataset.X_num['train'], dataset.y['train'])
     print(f"mi_scores shape: {mi_scores.shape}")
     np.save(mi_cache_file, mi_scores)
 
@@ -197,61 +199,23 @@ else:
 MI_THRESHOLD = 0.01
 significant_features = mi_scores >= MI_THRESHOLD
 mi_ranks = np.argsort(-mi_scores)[significant_features[np.argsort(-mi_scores)]]
+"""
 
-print(f"Original number of features: {len(mi_scores)}")
-print(f"Number of features kept: {len(mi_ranks)} (MI score >= {MI_THRESHOLD})")
+# Instead, just use the features as they are
+n_num_features = X_num['train'].shape[1]  # Should be 25 from our XGBoost selection
+print(f"Number of features (from XGBoost selection): {n_num_features}")
 
-# Reorder and filter the features with mutual information ranks
-X_num = {k: v[:, mi_ranks] for k, v in X_num.items()}
-# Normalized mutual information for loss weight (only for significant features)
-sorted_mi_scores = torch.from_numpy(mi_scores[mi_ranks] / mi_scores[mi_ranks].sum()).float().to(device)
+# Remove the reordering of features
+# X_num = {k: v[:, mi_ranks] for k, v in X_num.items()}
+# sorted_mi_scores = torch.from_numpy(mi_scores[mi_ranks] / mi_scores[mi_ranks].sum()).float().to(device)
 
-# Update n_num_features for model initialization
-n_num_features = len(mi_ranks)
-print(f"Updated n_num_features: {n_num_features}")
+print("\n=== Feature List for Training ===")
+print(f"Total selected features: {n_num_features}")
 
-# Add these debug prints right after the MI calculation and feature selection
-print("\n=== Feature Selection Debug ===")
-print(f"Original features shape: {dataset.X_num['train'].shape}")
-print(f"MI scores shape: {mi_scores.shape}")
-print(f"Selected feature indices (mi_ranks): {mi_ranks}")
-print(f"Number of selected features: {len(mi_ranks)}")
-print("=== End Debug ===\n")
-
-# After MI calculation but before model creation
-print("\n=== Mutual Information Feature Analysis ===")
+# Get feature names
 all_features = (dataset.cat_feature_names or []) + (dataset.num_feature_names or [])
-feature_mi_pairs = list(zip(all_features, mi_scores))
-feature_mi_pairs.sort(key=lambda x: x[1], reverse=True)
-
-print("\nFeatures ranked by MI score:")
-for feature, mi in feature_mi_pairs:
-    print(f"{feature}: {mi:.4f}")
-
-print(f"MI scores for all features: {mi_scores}")
-print(f"Features selected (MI >= {MI_THRESHOLD}): {mi_ranks}")
-print(f"Number of features: Original={len(mi_scores)}, Selected={len(mi_ranks)}")
-print("=== End Analysis ===\n")
-
-# After MI selection but before model creation (around line 213)
-print("\n=== Final Feature List for Training ===")
-print(f"Total selected features: {len(mi_ranks)}")
-
-# Get feature names in order
-all_features = (dataset.cat_feature_names or []) + (dataset.num_feature_names or [])
-selected_features = [all_features[i] for i in mi_ranks]
-
-# Count feature types
-num_features = len([f for f in selected_features if f in dataset.num_feature_names]) if dataset.num_feature_names else 0
-cat_features = len([f for f in selected_features if f in dataset.cat_feature_names]) if dataset.cat_feature_names else 0
-
-print("\nFeature counts:")
-print(f"Total selected features: {len(selected_features)}")
-print(f"Numerical features: {num_features}")
-print(f"Categorical features: {cat_features}")
-
-print("\nFeatures in order:")
-for i, feature in enumerate(selected_features, 1):
+print("\nFeatures:")
+for i, feature in enumerate(all_features, 1):
     print(f"{i}. {feature}")
 
 print("\nStarting training...")
@@ -527,6 +491,19 @@ if old_style:
     start_epoch = current_epoch + 1
     
 print(f"Starting training from epoch {start_epoch}")
+
+# Add these debug prints right before training loop
+print("\nPre-training Debug:")
+print(f"Batch size: {batch_size}")
+print(f"Data loader sizes:")
+print(f"- Train: {len(train_loader)} batches")
+print(f"- Val: {len(val_loader)} batches")
+print(f"- Test: {len(test_loader)} batches")
+print(f"Model device: {next(model.parameters()).device}")
+print(f"Data device: {next(iter(train_loader))[0].device}")
+print("\nStarting training loop...")
+
+# Then the training loop starts
 for epoch in range(start_epoch, n_epochs + 1):
     model.train()
     epoch_start = time.time()
