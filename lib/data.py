@@ -75,28 +75,25 @@ class Dataset:
         df = pd.read_csv(dir_ / 'corrected_permacts.csv')
         print(f"Initial DataFrame shape: {df.shape}")
         
-        # Load the top 25 XGBoost features
-        top_features = np.load('top_25_xgboost_features_20250312_180210.npy', allow_pickle=True)
-        print(f"Loading top {len(top_features)} XGBoost features: {top_features}")
-        
         # Drop rows with NaN values and remove Unnamed: 0 column
         df = df.dropna()
         if 'Unnamed: 0' in df.columns:
-            df = df.drop('Unnamed: 0', axis=1)
+           df = df.drop('Unnamed: 0', axis=1)  # Remove the problematic index column
         print(f"Shape after dropping NaNs: {df.shape}")
-        
-        # Drop pkgname and keep only top features plus target
         df = df.drop(['pkgname'], axis=1)
-        features_to_keep = list(top_features) + ['status']  # Keep target variable
-        df = df[features_to_keep]
-        print(f"Shape after selecting top features: {df.shape}")
+        # df = df.head(500)
+        
+
+        # Ensure there are no NaNs in numeric columns
+        # print("Columns with NaNs after dropna():")
+        # print(df.isna().sum())
 
         # Split features and target
         X = df.drop(['status'], axis=1)
         y = df['status']
         
-        print("Selected features:", list(X.columns))
-        print("Feature types:", X.dtypes)
+        print("Column names:", list(X.columns))  # Add this to see what features we have
+        print("Feature types:", X.dtypes)  # Add this to see feature types
         
         # Create train/val/test splits
         X_train, X_temp, y_train, y_temp = train_test_split(
@@ -105,6 +102,17 @@ class Dataset:
         X_val, X_test, y_val, y_test = train_test_split(
             X_temp, y_temp, test_size=0.5, random_state=42, stratify=y_temp
         )
+        
+
+        # Add this code to print indices
+        print("Train indices:", X_train.index.values)
+        print("Validation indices:", X_val.index.values) 
+        print("Test indices:", X_test.index.values)
+
+        # Optionally save indices to files
+        np.save('train_indices.npy', X_train.index.values)
+        np.save('val_indices.npy', X_val.index.values)
+        np.save('test_indices.npy', X_test.index.values)
 
         # Store feature names before converting to numpy arrays
         num_features = X.select_dtypes(include=['int64', 'float64']).columns.tolist()

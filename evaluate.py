@@ -8,7 +8,6 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, roc_auc_score
-from datetime import datetime
 
 import torch
 import torch.nn as nn
@@ -35,31 +34,6 @@ def get_args():
 
 def main():
     args = get_args()
-    
-    # Create timestamped filename for results
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    output_file = f'evaluation_results_{timestamp}.txt'
-
-    # Create a function to write to both console and file
-    class Logger:
-        def __init__(self, filename):
-            self.terminal = sys.stdout
-            self.log = open(filename, 'w')
-
-        def write(self, message):
-            self.terminal.write(message)
-            self.log.write(message)
-            self.log.flush()
-
-        def flush(self):
-            self.terminal.flush()
-            self.log.flush()
-
-    # Redirect stdout to our logger
-    sys.stdout = Logger(output_file)
-
-    print(f"Starting evaluation at {timestamp}")
-    print(f"Saving results to: {output_file}")
     print(f"Loading model from: {args.model_path}")
     
     # Load checkpoint
@@ -126,9 +100,42 @@ def main():
     
     print(f"\nShape after categorical encoding: {dataset.X_num['test'].shape}")
 
+    # 2. Load MI scores from cache - SAME AS TRAINING
+    mi_scores = np.load(f'cache/mi/{args.dataset}.npy')
+    print(f"Loaded MI scores shape: {mi_scores.shape}")
+    
+    # Get feature names from dataset
+    all_features = (dataset.cat_feature_names or []) + (dataset.num_feature_names or [])
+    
+    # 3. Apply same feature selection
+    MI_THRESHOLD = 0.01
+    significant_features = mi_scores >= MI_THRESHOLD
+    mi_ranks = np.argsort(-mi_scores)[significant_features[np.argsort(-mi_scores)]]
+    
+    print("\n=== MI Selection Analysis ===")
+    print(f"Total features before selection: {dataset.X_num['test'].shape[1]}")
+    print(f"Number of features to select: {len(mi_ranks)}")
+    print("Features sorted by MI score:")
+    for idx, score in sorted(enumerate(mi_scores), key=lambda x: x[1], reverse=True):
+        feature_name = all_features[idx]
+        print(f"Feature {idx} ({feature_name}): MI={score:.4f}")
+    print(f"\nSelected feature indices and names:")
+    for idx in mi_ranks:
+        feature_name = all_features[idx]
+        print(f"Feature {idx} ({feature_name}): MI={mi_scores[idx]:.4f}")
+    
+    # 4. Select features using same indices for both sets
+    dataset.X_num['test'] = dataset.X_num['test'][:, mi_ranks]
+    dataset.X_num['val'] = dataset.X_num['val'][:, mi_ranks]
+    print(f"Final feature shape: {dataset.X_num['test'].shape}\n")
+    
+    # Now prepare tensors and evaluate
+    X_num_test = torch.tensor(dataset.X_num['test'], dtype=torch.float32).to(device)
+    y_test = torch.tensor(dataset.y['test'], dtype=torch.float32).to(device)
+    
     # Initialize model with exact feature count
     model = ExcelFormer(
-        d_numerical=dataset.X_num['test'].shape[1],  # Use selected feature count
+        d_numerical=len(mi_ranks),  # Use selected feature count
         d_out=2,  # Binary classification
         categories=None,
         token_bias=True,
@@ -152,28 +159,6 @@ def main():
     # Load model weights and set to eval mode
     model.load_state_dict(checkpoint['model_state_dict'])
     model.eval()
-    
-    print("\n=== Feature Verification ===")
-    # Get input dimension from first layer's weight shape
-    input_dim = next(model.parameters()).shape[0]  # First dimension of first weight matrix
-    print(f"Model input dimension: {input_dim}")
-    print(f"Current feature count: {dataset.X_num['test'].shape[1]}")
-
-    if input_dim != dataset.X_num['test'].shape[1]:
-        raise ValueError(
-            f"Feature count mismatch! Model expects {input_dim} features "
-            f"but got {dataset.X_num['test'].shape[1]} features. "
-            "Make sure you're using the same feature set used during training."
-        )
-
-    print("\nFeature names:")
-    all_features = (dataset.cat_feature_names or []) + (dataset.num_feature_names or [])
-    for i, feature in enumerate(all_features):
-        print(f"{i+1}. {feature}")
-
-    # Now prepare tensors and evaluate
-    X_num_test = torch.tensor(dataset.X_num['test'], dtype=torch.float32).to(device)
-    y_test = torch.tensor(dataset.y['test'], dtype=torch.float32).to(device)
     
     # Evaluate both validation and test sets
     print("\nEvaluating validation and test sets:")
@@ -224,7 +209,7 @@ def main():
     plt.ylim([0.0, 1.05])
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
-    plt.title('ExcelFormer ROC Curves - Top 25 XGBoost Features')
+    plt.title('ROC Curves - Validation vs Test')
     plt.legend(loc="lower right")
     plt.grid(True)
     plt.savefig('roc_curves_comparison.png')
@@ -246,9 +231,6 @@ def main():
     print("\nTEST SET METRICS:")
     print(f"ROC AUC: {metrics['test']['roc_auc']:.4f}")
     print(f"Accuracy: {metrics['test']['accuracy']:.4f}")
-
-    print("\nEvaluation complete!")
-    sys.stdout.log.close()  # Close the log file
 
 if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
