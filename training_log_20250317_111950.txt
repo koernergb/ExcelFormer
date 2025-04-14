@@ -1,0 +1,216 @@
+Entered training script...
+Python executable: /home/umflint.edu/koernerg/excelformer/ExcelFormer/env/bin/python
+Python path: ['/home/umflint.edu/koernerg/excelformer/ExcelFormer', '/home/umflint.edu/koernerg/.pyenv/versions/3.8.18/lib/python38.zip', '/home/umflint.edu/koernerg/.pyenv/versions/3.8.18/lib/python3.8', '/home/umflint.edu/koernerg/.pyenv/versions/3.8.18/lib/python3.8/lib-dynload', '/home/umflint.edu/koernerg/excelformer/ExcelFormer/env/lib/python3.8/site-packages', '/home/umflint.edu/koernerg/excelformer/ExcelFormer/env/lib/python3.8/site-packages/setuptools/_vendor']
+LD_LIBRARY_PATH: Not set
+CUDA_HOME: Not set
+Torch version: 1.11.0+cu113
+Torch CUDA version: 11.3
+CUDA available: True
+CUDA device count: 1
+nvidia-smi output:
+ Mon Mar 17 11:19:51 2025       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 560.35.03              Driver Version: 560.35.03      CUDA Version: 12.6     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce RTX 4090        Off |   00000000:01:00.0 Off |                  Off |
+| 32%   49C    P0            185W /  450W |   21763MiB /  24564MiB |     64%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|    0   N/A  N/A      2482      G   /usr/lib/xorg/Xorg                              4MiB |
+|    0   N/A  N/A    225013      C   ...flint.edu/brayclou/.venv/bin/python      21740MiB |
++-----------------------------------------------------------------------------------------+
+
+Passed imports...
+CUDA available: True
+CUDA device count: 1
+Current CUDA device: 0
+CUDA device name: NVIDIA GeForce RTX 4090
+Loading data from: /home/umflint.edu/koernerg/excelformer/ExcelFormer/DATA/android_security
+Initial DataFrame shape: (870514, 50)
+Shape after dropping NaNs: (724160, 49)
+Shape after dropping pkgname: (724160, 48)
+Selected features: ['DevRegisteredDomain', 'LenDescription', 'LenWhatsNew', 'ReviewsAverage', 'CurrentVersion', 'Genre', 'ContentRating', 'LastUpdated', 'LenTitle', 'AndroidVersion', 'DeveloperCategory', 'isSpamming', 'net', 'intent', 'bluetooth', 'app', 'provider', 'speech', 'nfc', 'media', 'hardware', 'google', 'os', 'CALENDAR', 'CAMERA', 'CONTACTS', 'LOCATION', 'MICROPHONE', 'PHONE', 'SENSORS', 'SMS', 'STORAGE', 'FourStarRatings', 'ThreeStarRatings', 'FiveStarRatings', 'OneStarRatings', 'TwoStarRatings', 'lowest_android_version', 'highest_android_version', 'paid', 'file_size', 'max_downloads_log', 'developer_email', 'privacy_policy_link', 'developer_address', 'developer_website', 'days_since_last_update']
+Feature types: DevRegisteredDomain          int64
+LenDescription               int64
+LenWhatsNew                  int64
+ReviewsAverage             float64
+CurrentVersion              object
+Genre                       object
+ContentRating               object
+LastUpdated                  int64
+LenTitle                     int64
+AndroidVersion              object
+DeveloperCategory           object
+isSpamming                   int64
+net                          int64
+intent                       int64
+bluetooth                    int64
+app                          int64
+provider                     int64
+speech                       int64
+nfc                          int64
+media                        int64
+hardware                     int64
+google                       int64
+os                           int64
+CALENDAR                     int64
+CAMERA                       int64
+CONTACTS                     int64
+LOCATION                     int64
+MICROPHONE                   int64
+PHONE                        int64
+SENSORS                      int64
+SMS                          int64
+STORAGE                      int64
+FourStarRatings            float64
+ThreeStarRatings           float64
+FiveStarRatings            float64
+OneStarRatings             float64
+TwoStarRatings             float64
+lowest_android_version      object
+highest_android_version     object
+paid                         int64
+file_size                    int64
+max_downloads_log          float64
+developer_email              int64
+privacy_policy_link          int64
+developer_address            int64
+developer_website            int64
+days_since_last_update       int64
+dtype: object
+dataset.X_num['train'].shape: (506912, 40)
+dataset.X_num['train'].shape: (506912, 40)
+X_num shape in prepare_tensors: torch.Size([506912, 40])
+X_num shape after prepare_tensors: torch.Size([506912, 40])
+X_num shape before reorder: torch.Size([506912, 40])
+x_num shape in mi_func: (506912, 40)
+mi_scores shape: (40,)
+Original number of features: 40
+Number of features kept: 18 (MI score >= 0.01)
+Updated n_num_features: 18
+
+=== Feature Selection Debug ===
+Original features shape: (506912, 40)
+MI scores shape: (40,)
+Selected feature indices (mi_ranks): [ 4 39 36 31  6 30 28 34 27 29  2 26 38 37 21  8 23  3]
+Number of selected features: 18
+=== End Debug ===
+
+
+=== Mutual Information Feature Analysis ===
+
+Features ranked by MI score:
+DeveloperCategory: 0.0514
+paid: 0.0504
+FiveStarRatings: 0.0387
+SENSORS: 0.0307
+highest_android_version: 0.0299
+PHONE: 0.0289
+LOCATION: 0.0287
+FourStarRatings: 0.0281
+CONTACTS: 0.0275
+MICROPHONE: 0.0238
+ContentRating: 0.0232
+CAMERA: 0.0211
+TwoStarRatings: 0.0194
+OneStarRatings: 0.0179
+media: 0.0177
+LenDescription: 0.0166
+google: 0.0160
+AndroidVersion: 0.0108
+speech: 0.0097
+Genre: 0.0095
+nfc: 0.0093
+CALENDAR: 0.0044
+hardware: 0.0035
+DevRegisteredDomain: 0.0027
+provider: 0.0020
+STORAGE: 0.0018
+lowest_android_version: 0.0016
+LastUpdated: 0.0014
+LenTitle: 0.0011
+ReviewsAverage: 0.0008
+net: 0.0008
+isSpamming: 0.0007
+ThreeStarRatings: 0.0006
+LenWhatsNew: 0.0004
+CurrentVersion: 0.0004
+bluetooth: 0.0002
+SMS: 0.0001
+intent: 0.0000
+app: 0.0000
+os: 0.0000
+MI scores for all features: [3.69372448e-04 9.54368002e-03 2.31755968e-02 1.08468558e-02
+ 5.14371317e-02 1.55154626e-03 2.98551164e-02 2.67900204e-03
+ 1.65832549e-02 3.83556976e-04 8.18895844e-04 1.40030935e-03
+ 1.13807660e-03 6.91987996e-04 7.71858357e-04 0.00000000e+00
+ 2.12864406e-04 0.00000000e+00 2.03436772e-03 9.70784064e-03
+ 9.30458131e-03 1.76541156e-02 3.48827047e-03 1.59710268e-02
+ 0.00000000e+00 4.38951498e-03 2.10652619e-02 2.74605577e-02
+ 2.87047464e-02 2.37790146e-02 2.88768766e-02 3.06575057e-02
+ 9.64341265e-05 1.82017088e-03 2.81239245e-02 6.09150388e-04
+ 3.86900908e-02 1.78926871e-02 1.94186369e-02 5.04242928e-02]
+Features selected (MI >= 0.01): [ 4 39 36 31  6 30 28 34 27 29  2 26 38 37 21  8 23  3]
+Number of features: Original=40, Selected=18
+=== End Analysis ===
+
+
+=== Final Feature List for Training ===
+Total selected features: 18
+
+Feature counts:
+Total selected features: 18
+Numerical features: 14
+Categorical features: 4
+
+Features in order:
+1. DeveloperCategory
+2. paid
+3. FiveStarRatings
+4. SENSORS
+5. highest_android_version
+6. PHONE
+7. LOCATION
+8. FourStarRatings
+9. CONTACTS
+10. MICROPHONE
+11. ContentRating
+12. CAMERA
+13. TwoStarRatings
+14. OneStarRatings
+15. media
+16. LenDescription
+17. google
+18. AndroidVersion
+
+Starting training...
+X_num shape in data loaders: torch.Size([506912, 18])
+data_list contents and shapes: [{'train': torch.Size([506912, 18]), 'val': torch.Size([108624, 18]), 'test': torch.Size([108624, 18])}, {'train': torch.Size([506912, 7]), 'val': torch.Size([108624, 7]), 'test': torch.Size([108624, 7])}, {'train': torch.Size([506912]), 'val': torch.Size([108624]), 'test': torch.Size([108624])}]
+torch.Size([1614, 256])
+d_numerical: 18
+weight shape: torch.Size([18, 256])
+bias shape: torch.Size([25, 256])
+Traceback (most recent call last):
+  File "run_default_config_excel.py", line 431, in <module>
+    init_score = evaluate(['test'])['test'][metric] # test before training
+  File "/home/umflint.edu/koernerg/excelformer/ExcelFormer/env/lib/python3.8/site-packages/torch/autograd/grad_mode.py", line 27, in decorate_context
+    return func(*args, **kwargs)
+  File "run_default_config_excel.py", line 402, in evaluate
+    predictions[part].append(apply_model(x_num, x_cat))
+  File "run_default_config_excel.py", line 384, in apply_model
+    return model(x_num, x_cat)
+  File "/home/umflint.edu/koernerg/excelformer/ExcelFormer/env/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1110, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/home/umflint.edu/koernerg/excelformer/ExcelFormer/bin/excel_former.py", line 288, in forward
+    assert x_cat is None
+AssertionError

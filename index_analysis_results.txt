@@ -1,0 +1,4 @@
+Index pattern analysis results
+Number of domain segments: 1
+Top domains by segment size:
+  1: 870514 entries

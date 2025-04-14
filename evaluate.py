@@ -209,7 +209,7 @@ def main():
     plt.ylim([0.0, 1.05])
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
-    plt.title('ROC Curves - Validation vs Test')
+    plt.title('ExcelFormer ROC Curves - Top 25 Mutual Information Features')
     plt.legend(loc="lower right")
     plt.grid(True)
     plt.savefig('roc_curves_comparison.png')

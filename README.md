@@ -18,3 +18,9 @@ The datasets (96 small tabular datasets + 21 large tabular datasets) are availab
 ## Future work
 
 We will organize our previous works on **tabular prediction** into [Tabular AI Research](https://github.com/pytabular-ai) group for industrial use (e.g. further architecture optimization or acceleration / compilation). If you want to include our model as a baseline in your paper, please use the version in this repository rather than the industrial one in the group repository.
+
+Run training script with
+
+'''python
+python -u run_default_config_excel.py --dataset android_security --normalization quantile --seed 42 --early_stop 20 --mix_type none --save --catenc 2>&1 | tee training_log_$(date +%Y%m%d_%H%M%S).txt
+'''

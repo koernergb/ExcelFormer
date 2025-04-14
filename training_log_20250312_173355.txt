@@ -1,0 +1,186 @@
+Entered training script...
+Python executable: /home/umflint.edu/koernerg/excelformer/ExcelFormer/env/bin/python
+Python path: ['/home/umflint.edu/koernerg/excelformer/ExcelFormer', '/home/umflint.edu/koernerg/.pyenv/versions/3.8.18/lib/python38.zip', '/home/umflint.edu/koernerg/.pyenv/versions/3.8.18/lib/python3.8', '/home/umflint.edu/koernerg/.pyenv/versions/3.8.18/lib/python3.8/lib-dynload', '/home/umflint.edu/koernerg/excelformer/ExcelFormer/env/lib/python3.8/site-packages', '/home/umflint.edu/koernerg/excelformer/ExcelFormer/env/lib/python3.8/site-packages/setuptools/_vendor']
+LD_LIBRARY_PATH: Not set
+CUDA_HOME: Not set
+Torch version: 1.11.0+cu113
+Torch CUDA version: 11.3
+CUDA available: True
+CUDA device count: 1
+nvidia-smi output:
+ Wed Mar 12 17:33:56 2025       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 560.35.03              Driver Version: 560.35.03      CUDA Version: 12.6     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce RTX 4090        Off |   00000000:01:00.0 Off |                  Off |
+|  0%   37C    P8              2W /  450W |      18MiB /  24564MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|    0   N/A  N/A      2482      G   /usr/lib/xorg/Xorg                              4MiB |
++-----------------------------------------------------------------------------------------+
+
+Passed imports...
+CUDA available: True
+CUDA device count: 1
+Current CUDA device: 0
+CUDA device name: NVIDIA GeForce RTX 4090
+Loading data from: /home/umflint.edu/koernerg/excelformer/ExcelFormer/DATA/android_security
+Initial DataFrame shape: (870514, 50)
+Shape after dropping NaNs: (724160, 49)
+Column names: ['DevRegisteredDomain', 'LenDescription', 'LenWhatsNew', 'ReviewsAverage', 'CurrentVersion', 'Genre', 'ContentRating', 'LastUpdated', 'LenTitle', 'AndroidVersion', 'DeveloperCategory', 'isSpamming', 'net', 'intent', 'bluetooth', 'app', 'provider', 'speech', 'nfc', 'media', 'hardware', 'google', 'os', 'CALENDAR', 'CAMERA', 'CONTACTS', 'LOCATION', 'MICROPHONE', 'PHONE', 'SENSORS', 'SMS', 'STORAGE', 'FourStarRatings', 'ThreeStarRatings', 'FiveStarRatings', 'OneStarRatings', 'TwoStarRatings', 'lowest_android_version', 'highest_android_version', 'paid', 'file_size', 'max_downloads_log', 'developer_email', 'privacy_policy_link', 'developer_address', 'developer_website', 'days_since_last_update']
+Feature types: DevRegisteredDomain          int64
+LenDescription               int64
+LenWhatsNew                  int64
+ReviewsAverage             float64
+CurrentVersion              object
+Genre                       object
+ContentRating               object
+LastUpdated                  int64
+LenTitle                     int64
+AndroidVersion              object
+DeveloperCategory           object
+isSpamming                   int64
+net                          int64
+intent                       int64
+bluetooth                    int64
+app                          int64
+provider                     int64
+speech                       int64
+nfc                          int64
+media                        int64
+hardware                     int64
+google                       int64
+os                           int64
+CALENDAR                     int64
+CAMERA                       int64
+CONTACTS                     int64
+LOCATION                     int64
+MICROPHONE                   int64
+PHONE                        int64
+SENSORS                      int64
+SMS                          int64
+STORAGE                      int64
+FourStarRatings            float64
+ThreeStarRatings           float64
+FiveStarRatings            float64
+OneStarRatings             float64
+TwoStarRatings             float64
+lowest_android_version      object
+highest_android_version     object
+paid                         int64
+file_size                    int64
+max_downloads_log          float64
+developer_email              int64
+privacy_policy_link          int64
+developer_address            int64
+developer_website            int64
+days_since_last_update       int64
+dtype: object
+Train indices: [ 98326 469033 379988 ... 733260 168590 327807]
+Validation indices: [160409 405137 340273 ... 166702 381745 626917]
+Test indices: [505635 798256 100364 ... 439765 460743 630369]
+dataset.X_num['train'].shape: (506912, 47)
+dataset.X_num['train'].shape: (506912, 47)
+X_num shape in prepare_tensors: torch.Size([506912, 47])
+X_num shape after prepare_tensors: torch.Size([506912, 47])
+X_num shape before reorder: torch.Size([506912, 47])
+x_num shape in mi_func: (506912, 47)
+mi_scores shape: (47,)
+Original number of features: 47
+Number of features kept: 25 (MI score >= 0.01)
+Updated n_num_features: 25
+
+=== Feature Selection Debug ===
+Original features shape: (506912, 47)
+MI scores shape: (47,)
+Selected feature indices (mi_ranks): [ 2 11 46  6 43 38  0 13 41 37 34 35  5 33 36  9  3 44 45 15 30 28  4 10
+  1]
+Number of selected features: 25
+=== End Debug ===
+
+
+=== Mutual Information Feature Analysis ===
+
+Features ranked by MI score:
+ContentRating: 0.0574
+LastUpdated: 0.0513
+days_since_last_update: 0.0505
+highest_android_version: 0.0427
+privacy_policy_link: 0.0389
+TwoStarRatings: 0.0325
+CurrentVersion: 0.0308
+isSpamming: 0.0299
+max_downloads_log: 0.0286
+OneStarRatings: 0.0273
+FourStarRatings: 0.0273
+ThreeStarRatings: 0.0271
+lowest_android_version: 0.0250
+STORAGE: 0.0232
+FiveStarRatings: 0.0232
+LenWhatsNew: 0.0216
+AndroidVersion: 0.0215
+developer_address: 0.0208
+developer_website: 0.0185
+intent: 0.0172
+PHONE: 0.0167
+LOCATION: 0.0163
+DeveloperCategory: 0.0156
+ReviewsAverage: 0.0118
+Genre: 0.0116
+CAMERA: 0.0099
+CONTACTS: 0.0099
+LenDescription: 0.0097
+MICROPHONE: 0.0053
+SMS: 0.0048
+media: 0.0024
+LenTitle: 0.0018
+net: 0.0018
+CALENDAR: 0.0016
+file_size: 0.0016
+paid: 0.0015
+bluetooth: 0.0015
+DevRegisteredDomain: 0.0014
+provider: 0.0011
+hardware: 0.0007
+google: 0.0007
+developer_email: 0.0006
+os: 0.0003
+speech: 0.0001
+app: 0.0000
+nfc: 0.0000
+SENSORS: 0.0000
+MI scores for all features: [3.08340744e-02 1.15903869e-02 5.73716858e-02 2.15227307e-02
+ 1.55965173e-02 2.50015721e-02 4.26709193e-02 1.37464539e-03
+ 9.65179545e-03 2.15932245e-02 1.17877671e-02 5.13227371e-02
+ 1.81446286e-03 2.98910490e-02 1.80567093e-03 1.72215004e-02
+ 1.47209859e-03 4.80472555e-06 1.10319957e-03 7.87129470e-05
+ 0.00000000e+00 2.36435635e-03 7.22578997e-04 7.09712852e-04
+ 2.65361556e-04 1.57315156e-03 9.88437947e-03 9.85436337e-03
+ 1.62877004e-02 5.29529797e-03 1.67237194e-02 0.00000000e+00
+ 4.81564716e-03 2.31706463e-02 2.72805405e-02 2.70950878e-02
+ 2.31668833e-02 2.72915983e-02 3.25137990e-02 1.50796967e-03
+ 1.56952741e-03 2.86141038e-02 6.18041024e-04 3.89452285e-02
+ 2.07992976e-02 1.84695475e-02 5.05338292e-02]
+Features selected (MI >= 0.01): [ 2 11 46  6 43 38  0 13 41 37 34 35  5 33 36  9  3 44 45 15 30 28  4 10
+  1]
+Number of features: Original=47, Selected=25
+=== End Analysis ===
+
+
+=== Final Feature List for Training ===
+Total selected features: 25
+
+Feature counts:
+Total selected features: 25
+Numerical features: 18
+Categorical features: 7

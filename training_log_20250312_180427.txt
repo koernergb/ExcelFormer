@@ -1,0 +1,1268 @@
+Entered training script...
+Python executable: /home/umflint.edu/koernerg/excelformer/ExcelFormer/env/bin/python
+Python path: ['/home/umflint.edu/koernerg/excelformer/ExcelFormer', '/home/umflint.edu/koernerg/.pyenv/versions/3.8.18/lib/python38.zip', '/home/umflint.edu/koernerg/.pyenv/versions/3.8.18/lib/python3.8', '/home/umflint.edu/koernerg/.pyenv/versions/3.8.18/lib/python3.8/lib-dynload', '/home/umflint.edu/koernerg/excelformer/ExcelFormer/env/lib/python3.8/site-packages', '/home/umflint.edu/koernerg/excelformer/ExcelFormer/env/lib/python3.8/site-packages/setuptools/_vendor']
+LD_LIBRARY_PATH: Not set
+CUDA_HOME: Not set
+Torch version: 1.11.0+cu113
+Torch CUDA version: 11.3
+CUDA available: True
+CUDA device count: 1
+nvidia-smi output:
+ Wed Mar 12 18:04:28 2025       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 560.35.03              Driver Version: 560.35.03      CUDA Version: 12.6     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce RTX 4090        Off |   00000000:01:00.0 Off |                  Off |
+|  0%   38C    P8              2W /  450W |      18MiB /  24564MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|    0   N/A  N/A      2482      G   /usr/lib/xorg/Xorg                              4MiB |
++-----------------------------------------------------------------------------------------+
+
+Passed imports...
+CUDA available: True
+CUDA device count: 1
+Current CUDA device: 0
+CUDA device name: NVIDIA GeForce RTX 4090
+Loading data from: /home/umflint.edu/koernerg/excelformer/ExcelFormer/DATA/android_security
+Initial DataFrame shape: (870514, 50)
+Loading top 25 XGBoost features: ['ContentRating' 'Genre' 'privacy_policy_link' 'developer_website'
+ 'CurrentVersion' 'days_since_last_update' 'AndroidVersion' 'isSpamming'
+ 'max_downloads_log' 'LenWhatsNew' 'DeveloperCategory'
+ 'lowest_android_version' 'PHONE' 'OneStarRatings' 'developer_address'
+ 'FourStarRatings' 'intent' 'ReviewsAverage' 'highest_android_version'
+ 'STORAGE' 'LastUpdated' 'TwoStarRatings' 'LOCATION' 'FiveStarRatings'
+ 'ThreeStarRatings']
+Shape after dropping NaNs: (724160, 49)
+Shape after selecting top features: (724160, 26)
+Selected features: ['ContentRating', 'Genre', 'privacy_policy_link', 'developer_website', 'CurrentVersion', 'days_since_last_update', 'AndroidVersion', 'isSpamming', 'max_downloads_log', 'LenWhatsNew', 'DeveloperCategory', 'lowest_android_version', 'PHONE', 'OneStarRatings', 'developer_address', 'FourStarRatings', 'intent', 'ReviewsAverage', 'highest_android_version', 'STORAGE', 'LastUpdated', 'TwoStarRatings', 'LOCATION', 'FiveStarRatings', 'ThreeStarRatings']
+Feature types: ContentRating               object
+Genre                       object
+privacy_policy_link          int64
+developer_website            int64
+CurrentVersion              object
+days_since_last_update       int64
+AndroidVersion              object
+isSpamming                   int64
+max_downloads_log          float64
+LenWhatsNew                  int64
+DeveloperCategory           object
+lowest_android_version      object
+PHONE                        int64
+OneStarRatings             float64
+developer_address            int64
+FourStarRatings            float64
+intent                       int64
+ReviewsAverage             float64
+highest_android_version     object
+STORAGE                      int64
+LastUpdated                  int64
+TwoStarRatings             float64
+LOCATION                     int64
+FiveStarRatings            float64
+ThreeStarRatings           float64
+dtype: object
+dataset.X_num['train'].shape: (506912, 25)
+dataset.X_num['train'].shape: (506912, 25)
+X_num shape in prepare_tensors: torch.Size([506912, 25])
+X_num shape after prepare_tensors: torch.Size([506912, 25])
+Number of features (from XGBoost selection): 25
+
+=== Feature List for Training ===
+Total selected features: 25
+
+Features:
+1. ContentRating
+2. Genre
+3. CurrentVersion
+4. AndroidVersion
+5. DeveloperCategory
+6. lowest_android_version
+7. highest_android_version
+8. privacy_policy_link
+9. developer_website
+10. days_since_last_update
+11. isSpamming
+12. max_downloads_log
+13. LenWhatsNew
+14. PHONE
+15. OneStarRatings
+16. developer_address
+17. FourStarRatings
+18. intent
+19. ReviewsAverage
+20. STORAGE
+21. LastUpdated
+22. TwoStarRatings
+23. LOCATION
+24. FiveStarRatings
+25. ThreeStarRatings
+
+Starting training...
+X_num shape in data loaders: torch.Size([506912, 25])
+data_list contents and shapes: [{'train': torch.Size([506912, 25]), 'val': torch.Size([108624, 25]), 'test': torch.Size([108624, 25])}, {'train': torch.Size([506912]), 'val': torch.Size([108624]), 'test': torch.Size([108624])}]
+d_numerical: 25
+weight shape: torch.Size([25, 256])
+bias shape: torch.Size([25, 256])
+test time:  0.6345565319061279
+Test score before training:  0.4813
+Starting training from epoch 1
+
+Pre-training Debug:
+Batch size: 512
+Data loader sizes:
+- Train: 991 batches
+- Val: 14 batches
+- Test: 14 batches
+Model device: cuda:0
+Data device: cuda:0
+
+Starting training loop...
+Epoch 001 | Batch 0 | Loss: 0.6953 | LR: 0.000100
+
+Epoch 001 Summary:
+Average Loss: 0.6095
+Learning Rate: 0.000100
+Time: 18.66s
+test time:  0.6310372352600098
+Validation score: 0.7694
+Test score: 0.7684
+--------------------------------------------------
+ <<< BEST VALIDATION EPOCH: 0.7694
+Epoch 002 | Batch 0 | Loss: 0.6140 | LR: 0.000200
+
+Epoch 002 Summary:
+Average Loss: 0.6055
+Learning Rate: 0.000200
+Time: 18.68s
+test time:  0.6308739185333252
+Validation score: 0.7723
+Test score: 0.7713
+--------------------------------------------------
+ <<< BEST VALIDATION EPOCH: 0.7723
+Epoch 003 | Batch 0 | Loss: 0.6386 | LR: 0.000300
+
+Epoch 003 Summary:
+Average Loss: 0.6028
+Learning Rate: 0.000300
+Time: 18.69s
+test time:  0.6301274299621582
+Validation score: 0.7663
+Test score: 0.7657
+--------------------------------------------------
+Epoch 004 | Batch 0 | Loss: 0.6263 | LR: 0.000400
+
+Epoch 004 Summary:
+Average Loss: 0.6013
+Learning Rate: 0.000400
+Time: 18.62s
+test time:  0.6312243938446045
+Validation score: 0.7749
+Test score: 0.7742
+--------------------------------------------------
+ <<< BEST VALIDATION EPOCH: 0.7749
+Epoch 005 | Batch 0 | Loss: 0.5721 | LR: 0.000500
+
+Epoch 005 Summary:
+Average Loss: 0.5990
+Learning Rate: 0.000500
+Time: 18.71s
+test time:  0.6333177089691162
+Validation score: 0.7755
+Test score: 0.7753
+--------------------------------------------------
+Epoch 006 | Batch 0 | Loss: 0.5918 | LR: 0.000600
+
+Epoch 006 Summary:
+Average Loss: 0.5978
+Learning Rate: 0.000600
+Time: 18.75s
+test time:  0.6322197914123535
+Validation score: 0.7759
+Test score: 0.7751
+--------------------------------------------------
+ <<< BEST VALIDATION EPOCH: 0.7759
+Epoch 007 | Batch 0 | Loss: 0.6155 | LR: 0.000700
+
+Epoch 007 Summary:
+Average Loss: 0.5963
+Learning Rate: 0.000700
+Time: 18.75s
+test time:  0.6330356597900391
+Validation score: 0.7831
+Test score: 0.7822
+--------------------------------------------------
+ <<< BEST VALIDATION EPOCH: 0.7831
+Epoch 008 | Batch 0 | Loss: 0.5923 | LR: 0.000800
+
+Epoch 008 Summary:
+Average Loss: 0.5955
+Learning Rate: 0.000800
+Time: 18.69s
+test time:  0.6327433586120605
+Validation score: 0.7841
+Test score: 0.7826
+--------------------------------------------------
+Epoch 009 | Batch 0 | Loss: 0.6156 | LR: 0.000900
+
+Epoch 009 Summary:
+Average Loss: 0.5954
+Learning Rate: 0.000900
+Time: 18.77s
+test time:  0.6334514617919922
+Validation score: 0.7781
+Test score: 0.7771
+--------------------------------------------------
+Epoch 010 | Batch 0 | Loss: 0.5740 | LR: 0.001000
+
+Epoch 010 Summary:
+Average Loss: 0.5940
+Learning Rate: 0.001000
+Time: 18.75s
+test time:  0.6322464942932129
+Validation score: 0.7862
+Test score: 0.7848
+--------------------------------------------------
+ <<< BEST VALIDATION EPOCH: 0.7862
+Epoch 011 | Batch 0 | Loss: 0.5869 | LR: 0.001000
+
+Epoch 011 Summary:
+Average Loss: 0.5927
+Learning Rate: 0.001000
+Time: 18.72s
+test time:  0.6328465938568115
+Validation score: 0.7891
+Test score: 0.7885
+--------------------------------------------------
+ <<< BEST VALIDATION EPOCH: 0.7891
+Epoch 012 | Batch 0 | Loss: 0.5743 | LR: 0.001000
+
+Epoch 012 Summary:
+Average Loss: 0.5906
+Learning Rate: 0.001000
+Time: 18.70s
+test time:  0.6325600147247314
+Validation score: 0.7904
+Test score: 0.7896
+--------------------------------------------------
+ <<< BEST VALIDATION EPOCH: 0.7904
+Epoch 013 | Batch 0 | Loss: 0.5890 | LR: 0.001000
+
+Epoch 013 Summary:
+Average Loss: 0.5897
+Learning Rate: 0.001000
+Time: 18.76s
+test time:  0.6325759887695312
+Validation score: 0.7916
+Test score: 0.7903
+--------------------------------------------------
+ <<< BEST VALIDATION EPOCH: 0.7916
+Epoch 014 | Batch 0 | Loss: 0.5757 | LR: 0.001000
+
+Epoch 014 Summary:
+Average Loss: 0.5890
+Learning Rate: 0.001000
+Time: 18.75s
+test time:  0.632864236831665
+Validation score: 0.7956
+Test score: 0.7949
+--------------------------------------------------
+ <<< BEST VALIDATION EPOCH: 0.7956
+Epoch 015 | Batch 0 | Loss: 0.5621 | LR: 0.001000
+
+Epoch 015 Summary:
+Average Loss: 0.5877
+Learning Rate: 0.001000
+Time: 18.78s
+test time:  0.6328122615814209
+Validation score: 0.7981
+Test score: 0.7975
+--------------------------------------------------
+ <<< BEST VALIDATION EPOCH: 0.7981
+Epoch 016 | Batch 0 | Loss: 0.5912 | LR: 0.001000
+
+Epoch 016 Summary:
+Average Loss: 0.5872
+Learning Rate: 0.001000
+Time: 18.74s
+test time:  0.6324243545532227
+Validation score: 0.7986
+Test score: 0.7982
+--------------------------------------------------
+Epoch 017 | Batch 0 | Loss: 0.5685 | LR: 0.000999
+
+Epoch 017 Summary:
+Average Loss: 0.5851
+Learning Rate: 0.000999
+Time: 18.77s
+test time:  0.6328990459442139
+Validation score: 0.7986
+Test score: 0.7984
+--------------------------------------------------
+Epoch 018 | Batch 0 | Loss: 0.6050 | LR: 0.000999
+
+Epoch 018 Summary:
+Average Loss: 0.5841
+Learning Rate: 0.000999
+Time: 18.75s
+test time:  0.6326766014099121
+Validation score: 0.8014
+Test score: 0.8005
+--------------------------------------------------
+ <<< BEST VALIDATION EPOCH: 0.8014
+Epoch 019 | Batch 0 | Loss: 0.6032 | LR: 0.000999
+
+Epoch 019 Summary:
+Average Loss: 0.5835
+Learning Rate: 0.000999
+Time: 18.78s
+test time:  0.6331429481506348
+Validation score: 0.8025
+Test score: 0.8024
+--------------------------------------------------
+ <<< BEST VALIDATION EPOCH: 0.8025
+Epoch 020 | Batch 0 | Loss: 0.5907 | LR: 0.000999
+
+Epoch 020 Summary:
+Average Loss: 0.5821
+Learning Rate: 0.000999
+Time: 18.76s
+test time:  0.6319277286529541
+Validation score: 0.8044
+Test score: 0.8034
+--------------------------------------------------
+ <<< BEST VALIDATION EPOCH: 0.8044
+Epoch 021 | Batch 0 | Loss: 0.5627 | LR: 0.000999
+
+Epoch 021 Summary:
+Average Loss: 0.5817
+Learning Rate: 0.000999
+Time: 18.73s
+test time:  0.6332042217254639
+Validation score: 0.8050
+Test score: 0.8042
+--------------------------------------------------
+Epoch 022 | Batch 0 | Loss: 0.5714 | LR: 0.000999
+
+Epoch 022 Summary:
+Average Loss: 0.5810
+Learning Rate: 0.000999
+Time: 18.72s
+test time:  0.632352352142334
+Validation score: 0.8076
+Test score: 0.8069
+--------------------------------------------------
+ <<< BEST VALIDATION EPOCH: 0.8076
+Epoch 023 | Batch 0 | Loss: 0.5693 | LR: 0.000998
+
+Epoch 023 Summary:
+Average Loss: 0.5798
+Learning Rate: 0.000998
+Time: 18.73s
+test time:  0.6321587562561035
+Validation score: 0.8068
+Test score: 0.8060
+--------------------------------------------------
+Epoch 024 | Batch 0 | Loss: 0.5727 | LR: 0.000998
+
+Epoch 024 Summary:
+Average Loss: 0.5794
+Learning Rate: 0.000998
+Time: 18.69s
+test time:  0.6312234401702881
+Validation score: 0.8094
+Test score: 0.8084
+--------------------------------------------------
+ <<< BEST VALIDATION EPOCH: 0.8094
+Epoch 025 | Batch 0 | Loss: 0.5653 | LR: 0.000998
+
+Epoch 025 Summary:
+Average Loss: 0.5779
+Learning Rate: 0.000998
+Time: 18.76s
+test time:  0.6329083442687988
+Validation score: 0.8107
+Test score: 0.8109
+--------------------------------------------------
+ <<< BEST VALIDATION EPOCH: 0.8107
+Epoch 026 | Batch 0 | Loss: 0.5770 | LR: 0.000997
+
+Epoch 026 Summary:
+Average Loss: 0.5775
+Learning Rate: 0.000997
+Time: 18.76s
+test time:  0.63210129737854
+Validation score: 0.8122
+Test score: 0.8115
+--------------------------------------------------
+ <<< BEST VALIDATION EPOCH: 0.8122
+Epoch 027 | Batch 0 | Loss: 0.5813 | LR: 0.000997
+
+Epoch 027 Summary:
+Average Loss: 0.5767
+Learning Rate: 0.000997
+Time: 18.78s
+test time:  0.6333105564117432
+Validation score: 0.8128
+Test score: 0.8123
+--------------------------------------------------
+Epoch 028 | Batch 0 | Loss: 0.5768 | LR: 0.000997
+
+Epoch 028 Summary:
+Average Loss: 0.5759
+Learning Rate: 0.000997
+Time: 18.75s
+test time:  0.6320722103118896
+Validation score: 0.8130
+Test score: 0.8126
+--------------------------------------------------
+Epoch 029 | Batch 0 | Loss: 0.5841 | LR: 0.000996
+
+Epoch 029 Summary:
+Average Loss: 0.5753
+Learning Rate: 0.000996
+Time: 18.77s
+test time:  0.6336448192596436
+Validation score: 0.8108
+Test score: 0.8108
+--------------------------------------------------
+Epoch 030 | Batch 0 | Loss: 0.5989 | LR: 0.000996
+
+Epoch 030 Summary:
+Average Loss: 0.5740
+Learning Rate: 0.000996
+Time: 18.76s
+test time:  0.6325154304504395
+Validation score: 0.8153
+Test score: 0.8147
+--------------------------------------------------
+ <<< BEST VALIDATION EPOCH: 0.8153
+Epoch 031 | Batch 0 | Loss: 0.5762 | LR: 0.000995
+
+Epoch 031 Summary:
+Average Loss: 0.5742
+Learning Rate: 0.000995
+Time: 18.78s
+test time:  0.6329629421234131
+Validation score: 0.8146
+Test score: 0.8145
+--------------------------------------------------
+Epoch 032 | Batch 0 | Loss: 0.5786 | LR: 0.000995
+
+Epoch 032 Summary:
+Average Loss: 0.5737
+Learning Rate: 0.000995
+Time: 18.76s
+test time:  0.6320714950561523
+Validation score: 0.8160
+Test score: 0.8163
+--------------------------------------------------
+Epoch 033 | Batch 0 | Loss: 0.5416 | LR: 0.000995
+
+Epoch 033 Summary:
+Average Loss: 0.5727
+Learning Rate: 0.000995
+Time: 18.76s
+test time:  0.6336822509765625
+Validation score: 0.8160
+Test score: 0.8155
+--------------------------------------------------
+Epoch 034 | Batch 0 | Loss: 0.5940 | LR: 0.000994
+
+Epoch 034 Summary:
+Average Loss: 0.5719
+Learning Rate: 0.000994
+Time: 18.76s
+test time:  0.6324024200439453
+Validation score: 0.8175
+Test score: 0.8168
+--------------------------------------------------
+ <<< BEST VALIDATION EPOCH: 0.8175
+Epoch 035 | Batch 0 | Loss: 0.5789 | LR: 0.000994
+
+Epoch 035 Summary:
+Average Loss: 0.5718
+Learning Rate: 0.000994
+Time: 18.76s
+test time:  0.6252937316894531
+Validation score: 0.8159
+Test score: 0.8152
+--------------------------------------------------
+Epoch 036 | Batch 0 | Loss: 0.5442 | LR: 0.000993
+
+Epoch 036 Summary:
+Average Loss: 0.5703
+Learning Rate: 0.000993
+Time: 18.75s
+test time:  0.6325023174285889
+Validation score: 0.8188
+Test score: 0.8172
+--------------------------------------------------
+ <<< BEST VALIDATION EPOCH: 0.8188
+Epoch 037 | Batch 0 | Loss: 0.5649 | LR: 0.000993
+
+Epoch 037 Summary:
+Average Loss: 0.5703
+Learning Rate: 0.000993
+Time: 18.78s
+test time:  0.6332447528839111
+Validation score: 0.8185
+Test score: 0.8173
+--------------------------------------------------
+Epoch 038 | Batch 0 | Loss: 0.5697 | LR: 0.000992
+
+Epoch 038 Summary:
+Average Loss: 0.5705
+Learning Rate: 0.000992
+Time: 18.75s
+test time:  0.6327569484710693
+Validation score: 0.8192
+Test score: 0.8183
+--------------------------------------------------
+Epoch 039 | Batch 0 | Loss: 0.5407 | LR: 0.000991
+
+Epoch 039 Summary:
+Average Loss: 0.5691
+Learning Rate: 0.000991
+Time: 18.78s
+test time:  0.6329312324523926
+Validation score: 0.8199
+Test score: 0.8192
+--------------------------------------------------
+ <<< BEST VALIDATION EPOCH: 0.8199
+Epoch 040 | Batch 0 | Loss: 0.5858 | LR: 0.000991
+
+Epoch 040 Summary:
+Average Loss: 0.5683
+Learning Rate: 0.000991
+Time: 18.71s
+test time:  0.6322901248931885
+Validation score: 0.8187
+Test score: 0.8182
+--------------------------------------------------
+Epoch 041 | Batch 0 | Loss: 0.5774 | LR: 0.000990
+
+Epoch 041 Summary:
+Average Loss: 0.5684
+Learning Rate: 0.000990
+Time: 18.72s
+test time:  0.6328659057617188
+Validation score: 0.8204
+Test score: 0.8200
+--------------------------------------------------
+Epoch 042 | Batch 0 | Loss: 0.5717 | LR: 0.000990
+
+Epoch 042 Summary:
+Average Loss: 0.5678
+Learning Rate: 0.000990
+Time: 18.68s
+test time:  0.6319425106048584
+Validation score: 0.8223
+Test score: 0.8216
+--------------------------------------------------
+ <<< BEST VALIDATION EPOCH: 0.8223
+Epoch 043 | Batch 0 | Loss: 0.5573 | LR: 0.000989
+
+Epoch 043 Summary:
+Average Loss: 0.5680
+Learning Rate: 0.000989
+Time: 18.78s
+test time:  0.6333432197570801
+Validation score: 0.8213
+Test score: 0.8202
+--------------------------------------------------
+Epoch 044 | Batch 0 | Loss: 0.5865 | LR: 0.000988
+
+Epoch 044 Summary:
+Average Loss: 0.5665
+Learning Rate: 0.000988
+Time: 18.74s
+test time:  0.6329047679901123
+Validation score: 0.8219
+Test score: 0.8214
+--------------------------------------------------
+Epoch 045 | Batch 0 | Loss: 0.6034 | LR: 0.000987
+
+Epoch 045 Summary:
+Average Loss: 0.5661
+Learning Rate: 0.000987
+Time: 18.72s
+test time:  0.6334309577941895
+Validation score: 0.8188
+Test score: 0.8178
+--------------------------------------------------
+Epoch 046 | Batch 0 | Loss: 0.6166 | LR: 0.000987
+
+Epoch 046 Summary:
+Average Loss: 0.5647
+Learning Rate: 0.000987
+Time: 18.71s
+test time:  0.6317429542541504
+Validation score: 0.8221
+Test score: 0.8219
+--------------------------------------------------
+Epoch 047 | Batch 0 | Loss: 0.5560 | LR: 0.000986
+
+Epoch 047 Summary:
+Average Loss: 0.5642
+Learning Rate: 0.000986
+Time: 18.72s
+test time:  0.633220911026001
+Validation score: 0.8222
+Test score: 0.8219
+--------------------------------------------------
+Epoch 048 | Batch 0 | Loss: 0.5521 | LR: 0.000985
+
+Epoch 048 Summary:
+Average Loss: 0.5648
+Learning Rate: 0.000985
+Time: 18.70s
+test time:  0.632725715637207
+Validation score: 0.8218
+Test score: 0.8222
+--------------------------------------------------
+Epoch 049 | Batch 0 | Loss: 0.5471 | LR: 0.000984
+
+Epoch 049 Summary:
+Average Loss: 0.5645
+Learning Rate: 0.000984
+Time: 18.77s
+test time:  0.6326701641082764
+Validation score: 0.8210
+Test score: 0.8213
+--------------------------------------------------
+Epoch 050 | Batch 0 | Loss: 0.5642 | LR: 0.000984
+
+Epoch 050 Summary:
+Average Loss: 0.5630
+Learning Rate: 0.000984
+Time: 18.75s
+test time:  0.6325249671936035
+Validation score: 0.8241
+Test score: 0.8229
+--------------------------------------------------
+ <<< BEST VALIDATION EPOCH: 0.8241
+Epoch 051 | Batch 0 | Loss: 0.5670 | LR: 0.000983
+
+Epoch 051 Summary:
+Average Loss: 0.5633
+Learning Rate: 0.000983
+Time: 18.77s
+test time:  0.6330032348632812
+Validation score: 0.8237
+Test score: 0.8234
+--------------------------------------------------
+Epoch 052 | Batch 0 | Loss: 0.5703 | LR: 0.000982
+
+Epoch 052 Summary:
+Average Loss: 0.5618
+Learning Rate: 0.000982
+Time: 18.75s
+test time:  0.632277250289917
+Validation score: 0.8241
+Test score: 0.8232
+--------------------------------------------------
+Epoch 053 | Batch 0 | Loss: 0.5333 | LR: 0.000981
+
+Epoch 053 Summary:
+Average Loss: 0.5615
+Learning Rate: 0.000981
+Time: 18.77s
+test time:  0.6329689025878906
+Validation score: 0.8230
+Test score: 0.8226
+--------------------------------------------------
+Epoch 054 | Batch 0 | Loss: 0.5826 | LR: 0.000980
+
+Epoch 054 Summary:
+Average Loss: 0.5617
+Learning Rate: 0.000980
+Time: 18.75s
+test time:  0.6299536228179932
+Validation score: 0.8246
+Test score: 0.8249
+--------------------------------------------------
+Epoch 055 | Batch 0 | Loss: 0.5626 | LR: 0.000979
+
+Epoch 055 Summary:
+Average Loss: 0.5605
+Learning Rate: 0.000979
+Time: 18.77s
+test time:  0.6332395076751709
+Validation score: 0.8244
+Test score: 0.8246
+--------------------------------------------------
+Epoch 056 | Batch 0 | Loss: 0.5782 | LR: 0.000978
+
+Epoch 056 Summary:
+Average Loss: 0.5605
+Learning Rate: 0.000978
+Time: 18.73s
+test time:  0.6327614784240723
+Validation score: 0.8236
+Test score: 0.8235
+--------------------------------------------------
+Epoch 057 | Batch 0 | Loss: 0.5699 | LR: 0.000977
+
+Epoch 057 Summary:
+Average Loss: 0.5600
+Learning Rate: 0.000977
+Time: 18.69s
+test time:  0.633760929107666
+Validation score: 0.8230
+Test score: 0.8232
+--------------------------------------------------
+Epoch 058 | Batch 0 | Loss: 0.5899 | LR: 0.000977
+
+Epoch 058 Summary:
+Average Loss: 0.5595
+Learning Rate: 0.000977
+Time: 18.73s
+test time:  0.6329383850097656
+Validation score: 0.8267
+Test score: 0.8265
+--------------------------------------------------
+ <<< BEST VALIDATION EPOCH: 0.8267
+Epoch 059 | Batch 0 | Loss: 0.5374 | LR: 0.000976
+
+Epoch 059 Summary:
+Average Loss: 0.5589
+Learning Rate: 0.000976
+Time: 18.77s
+test time:  0.6328639984130859
+Validation score: 0.8257
+Test score: 0.8256
+--------------------------------------------------
+Epoch 060 | Batch 0 | Loss: 0.5617 | LR: 0.000975
+
+Epoch 060 Summary:
+Average Loss: 0.5582
+Learning Rate: 0.000975
+Time: 18.75s
+test time:  0.6327407360076904
+Validation score: 0.8260
+Test score: 0.8265
+--------------------------------------------------
+Epoch 061 | Batch 0 | Loss: 0.5640 | LR: 0.000974
+
+Epoch 061 Summary:
+Average Loss: 0.5580
+Learning Rate: 0.000974
+Time: 18.77s
+test time:  0.6333286762237549
+Validation score: 0.8259
+Test score: 0.8259
+--------------------------------------------------
+Epoch 062 | Batch 0 | Loss: 0.5438 | LR: 0.000972
+
+Epoch 062 Summary:
+Average Loss: 0.5581
+Learning Rate: 0.000972
+Time: 18.75s
+test time:  0.6326291561126709
+Validation score: 0.8256
+Test score: 0.8261
+--------------------------------------------------
+Epoch 063 | Batch 0 | Loss: 0.5476 | LR: 0.000971
+
+Epoch 063 Summary:
+Average Loss: 0.5576
+Learning Rate: 0.000971
+Time: 18.73s
+test time:  0.6330256462097168
+Validation score: 0.8269
+Test score: 0.8267
+--------------------------------------------------
+Epoch 064 | Batch 0 | Loss: 0.5386 | LR: 0.000970
+
+Epoch 064 Summary:
+Average Loss: 0.5579
+Learning Rate: 0.000970
+Time: 18.74s
+test time:  0.6325595378875732
+Validation score: 0.8262
+Test score: 0.8263
+--------------------------------------------------
+Epoch 065 | Batch 0 | Loss: 0.5409 | LR: 0.000969
+
+Epoch 065 Summary:
+Average Loss: 0.5561
+Learning Rate: 0.000969
+Time: 18.77s
+test time:  0.6337494850158691
+Validation score: 0.8272
+Test score: 0.8272
+--------------------------------------------------
+Epoch 066 | Batch 0 | Loss: 0.5636 | LR: 0.000968
+
+Epoch 066 Summary:
+Average Loss: 0.5560
+Learning Rate: 0.000968
+Time: 18.74s
+test time:  0.6326146125793457
+Validation score: 0.8268
+Test score: 0.8276
+--------------------------------------------------
+Epoch 067 | Batch 0 | Loss: 0.5526 | LR: 0.000967
+
+Epoch 067 Summary:
+Average Loss: 0.5557
+Learning Rate: 0.000967
+Time: 18.72s
+test time:  0.6336171627044678
+Validation score: 0.8276
+Test score: 0.8277
+--------------------------------------------------
+Epoch 068 | Batch 0 | Loss: 0.5739 | LR: 0.000966
+
+Epoch 068 Summary:
+Average Loss: 0.5548
+Learning Rate: 0.000966
+Time: 18.72s
+test time:  0.632742166519165
+Validation score: 0.8278
+Test score: 0.8277
+--------------------------------------------------
+ <<< BEST VALIDATION EPOCH: 0.8278
+Epoch 069 | Batch 0 | Loss: 0.5390 | LR: 0.000965
+
+Epoch 069 Summary:
+Average Loss: 0.5549
+Learning Rate: 0.000965
+Time: 18.77s
+test time:  0.6335408687591553
+Validation score: 0.8271
+Test score: 0.8274
+--------------------------------------------------
+Epoch 070 | Batch 0 | Loss: 0.5519 | LR: 0.000963
+
+Epoch 070 Summary:
+Average Loss: 0.5551
+Learning Rate: 0.000963
+Time: 18.73s
+test time:  0.6324217319488525
+Validation score: 0.8276
+Test score: 0.8272
+--------------------------------------------------
+Epoch 071 | Batch 0 | Loss: 0.5507 | LR: 0.000962
+
+Epoch 071 Summary:
+Average Loss: 0.5548
+Learning Rate: 0.000962
+Time: 18.77s
+test time:  0.6328456401824951
+Validation score: 0.8280
+Test score: 0.8282
+--------------------------------------------------
+Epoch 072 | Batch 0 | Loss: 0.5461 | LR: 0.000961
+
+Epoch 072 Summary:
+Average Loss: 0.5535
+Learning Rate: 0.000961
+Time: 18.76s
+test time:  0.6326043605804443
+Validation score: 0.8280
+Test score: 0.8277
+--------------------------------------------------
+Epoch 073 | Batch 0 | Loss: 0.5655 | LR: 0.000960
+
+Epoch 073 Summary:
+Average Loss: 0.5533
+Learning Rate: 0.000960
+Time: 18.76s
+test time:  0.6328494548797607
+Validation score: 0.8277
+Test score: 0.8275
+--------------------------------------------------
+Epoch 074 | Batch 0 | Loss: 0.5542 | LR: 0.000958
+
+Epoch 074 Summary:
+Average Loss: 0.5528
+Learning Rate: 0.000958
+Time: 18.72s
+test time:  0.6325159072875977
+Validation score: 0.8292
+Test score: 0.8291
+--------------------------------------------------
+ <<< BEST VALIDATION EPOCH: 0.8292
+Epoch 075 | Batch 0 | Loss: 0.5437 | LR: 0.000957
+
+Epoch 075 Summary:
+Average Loss: 0.5520
+Learning Rate: 0.000957
+Time: 18.74s
+test time:  0.6334385871887207
+Validation score: 0.8290
+Test score: 0.8285
+--------------------------------------------------
+Epoch 076 | Batch 0 | Loss: 0.5370 | LR: 0.000956
+
+Epoch 076 Summary:
+Average Loss: 0.5513
+Learning Rate: 0.000956
+Time: 18.71s
+test time:  0.6325316429138184
+Validation score: 0.8277
+Test score: 0.8273
+--------------------------------------------------
+Epoch 077 | Batch 0 | Loss: 0.5490 | LR: 0.000955
+
+Epoch 077 Summary:
+Average Loss: 0.5527
+Learning Rate: 0.000955
+Time: 18.77s
+test time:  0.6333348751068115
+Validation score: 0.8292
+Test score: 0.8288
+--------------------------------------------------
+Epoch 078 | Batch 0 | Loss: 0.5092 | LR: 0.000953
+
+Epoch 078 Summary:
+Average Loss: 0.5507
+Learning Rate: 0.000953
+Time: 18.75s
+test time:  0.633028507232666
+Validation score: 0.8287
+Test score: 0.8280
+--------------------------------------------------
+Epoch 079 | Batch 0 | Loss: 0.5397 | LR: 0.000952
+
+Epoch 079 Summary:
+Average Loss: 0.5509
+Learning Rate: 0.000952
+Time: 18.71s
+test time:  0.6335577964782715
+Validation score: 0.8279
+Test score: 0.8270
+--------------------------------------------------
+Epoch 080 | Batch 0 | Loss: 0.5495 | LR: 0.000950
+
+Epoch 080 Summary:
+Average Loss: 0.5507
+Learning Rate: 0.000950
+Time: 18.75s
+test time:  0.6328375339508057
+Validation score: 0.8275
+Test score: 0.8269
+--------------------------------------------------
+Epoch 081 | Batch 0 | Loss: 0.5525 | LR: 0.000949
+
+Epoch 081 Summary:
+Average Loss: 0.5499
+Learning Rate: 0.000949
+Time: 18.77s
+test time:  0.6318008899688721
+Validation score: 0.8287
+Test score: 0.8283
+--------------------------------------------------
+Epoch 082 | Batch 0 | Loss: 0.5232 | LR: 0.000948
+
+Epoch 082 Summary:
+Average Loss: 0.5492
+Learning Rate: 0.000948
+Time: 18.75s
+test time:  0.630598783493042
+Validation score: 0.8291
+Test score: 0.8288
+--------------------------------------------------
+Epoch 083 | Batch 0 | Loss: 0.5376 | LR: 0.000946
+
+Epoch 083 Summary:
+Average Loss: 0.5493
+Learning Rate: 0.000946
+Time: 18.77s
+test time:  0.6312248706817627
+Validation score: 0.8278
+Test score: 0.8271
+--------------------------------------------------
+Epoch 084 | Batch 0 | Loss: 0.5339 | LR: 0.000945
+
+Epoch 084 Summary:
+Average Loss: 0.5491
+Learning Rate: 0.000945
+Time: 18.76s
+test time:  0.6326460838317871
+Validation score: 0.8299
+Test score: 0.8286
+--------------------------------------------------
+Epoch 085 | Batch 0 | Loss: 0.5246 | LR: 0.000943
+
+Epoch 085 Summary:
+Average Loss: 0.5484
+Learning Rate: 0.000943
+Time: 18.77s
+test time:  0.633500337600708
+Validation score: 0.8272
+Test score: 0.8264
+--------------------------------------------------
+Epoch 086 | Batch 0 | Loss: 0.5646 | LR: 0.000942
+
+Epoch 086 Summary:
+Average Loss: 0.5476
+Learning Rate: 0.000942
+Time: 18.76s
+test time:  0.6320383548736572
+Validation score: 0.8275
+Test score: 0.8264
+--------------------------------------------------
+Epoch 087 | Batch 0 | Loss: 0.5642 | LR: 0.000940
+
+Epoch 087 Summary:
+Average Loss: 0.5467
+Learning Rate: 0.000940
+Time: 18.78s
+test time:  0.6331701278686523
+Validation score: 0.8294
+Test score: 0.8283
+--------------------------------------------------
+Epoch 088 | Batch 0 | Loss: 0.5468 | LR: 0.000939
+
+Epoch 088 Summary:
+Average Loss: 0.5468
+Learning Rate: 0.000939
+Time: 18.75s
+test time:  0.6325283050537109
+Validation score: 0.8282
+Test score: 0.8276
+--------------------------------------------------
+Epoch 089 | Batch 0 | Loss: 0.5428 | LR: 0.000937
+
+Epoch 089 Summary:
+Average Loss: 0.5462
+Learning Rate: 0.000937
+Time: 18.77s
+test time:  0.633526086807251
+Validation score: 0.8301
+Test score: 0.8287
+--------------------------------------------------
+Epoch 090 | Batch 0 | Loss: 0.5578 | LR: 0.000936
+
+Epoch 090 Summary:
+Average Loss: 0.5468
+Learning Rate: 0.000936
+Time: 18.75s
+test time:  0.6324529647827148
+Validation score: 0.8265
+Test score: 0.8264
+--------------------------------------------------
+Epoch 091 | Batch 0 | Loss: 0.5431 | LR: 0.000934
+
+Epoch 091 Summary:
+Average Loss: 0.5458
+Learning Rate: 0.000934
+Time: 18.77s
+test time:  0.633094310760498
+Validation score: 0.8304
+Test score: 0.8289
+--------------------------------------------------
+ <<< BEST VALIDATION EPOCH: 0.8304
+Epoch 092 | Batch 0 | Loss: 0.5124 | LR: 0.000932
+
+Epoch 092 Summary:
+Average Loss: 0.5452
+Learning Rate: 0.000932
+Time: 18.73s
+test time:  0.632561445236206
+Validation score: 0.8293
+Test score: 0.8282
+--------------------------------------------------
+Epoch 093 | Batch 0 | Loss: 0.5347 | LR: 0.000931
+
+Epoch 093 Summary:
+Average Loss: 0.5451
+Learning Rate: 0.000931
+Time: 18.78s
+test time:  0.63108229637146
+Validation score: 0.8295
+Test score: 0.8284
+--------------------------------------------------
+Epoch 094 | Batch 0 | Loss: 0.5120 | LR: 0.000929
+
+Epoch 094 Summary:
+Average Loss: 0.5450
+Learning Rate: 0.000929
+Time: 18.77s
+test time:  0.6329998970031738
+Validation score: 0.8293
+Test score: 0.8284
+--------------------------------------------------
+Epoch 095 | Batch 0 | Loss: 0.5166 | LR: 0.000928
+
+Epoch 095 Summary:
+Average Loss: 0.5451
+Learning Rate: 0.000928
+Time: 18.79s
+test time:  0.632742166519165
+Validation score: 0.8291
+Test score: 0.8291
+--------------------------------------------------
+Epoch 096 | Batch 0 | Loss: 0.5435 | LR: 0.000926
+
+Epoch 096 Summary:
+Average Loss: 0.5436
+Learning Rate: 0.000926
+Time: 18.76s
+test time:  0.633112907409668
+Validation score: 0.8292
+Test score: 0.8291
+--------------------------------------------------
+Epoch 097 | Batch 0 | Loss: 0.5243 | LR: 0.000924
+
+Epoch 097 Summary:
+Average Loss: 0.5433
+Learning Rate: 0.000924
+Time: 18.78s
+test time:  0.633328914642334
+Validation score: 0.8294
+Test score: 0.8291
+--------------------------------------------------
+Epoch 098 | Batch 0 | Loss: 0.5772 | LR: 0.000923
+
+Epoch 098 Summary:
+Average Loss: 0.5433
+Learning Rate: 0.000923
+Time: 18.76s
+test time:  0.632819414138794
+Validation score: 0.8288
+Test score: 0.8279
+--------------------------------------------------
+Epoch 099 | Batch 0 | Loss: 0.5431 | LR: 0.000921
+
+Epoch 099 Summary:
+Average Loss: 0.5428
+Learning Rate: 0.000921
+Time: 18.77s
+test time:  0.6333775520324707
+Validation score: 0.8280
+Test score: 0.8282
+--------------------------------------------------
+Epoch 100 | Batch 0 | Loss: 0.5015 | LR: 0.000919
+
+Epoch 100 Summary:
+Average Loss: 0.5419
+Learning Rate: 0.000919
+Time: 18.71s
+test time:  0.6325831413269043
+Validation score: 0.8275
+Test score: 0.8273
+--------------------------------------------------
+Epoch 101 | Batch 0 | Loss: 0.4990 | LR: 0.000917
+
+Epoch 101 Summary:
+Average Loss: 0.5429
+Learning Rate: 0.000917
+Time: 18.76s
+test time:  0.6333503723144531
+Validation score: 0.8286
+Test score: 0.8282
+--------------------------------------------------
+Epoch 102 | Batch 0 | Loss: 0.5354 | LR: 0.000916
+
+Epoch 102 Summary:
+Average Loss: 0.5411
+Learning Rate: 0.000916
+Time: 18.77s
+test time:  0.6328794956207275
+Validation score: 0.8272
+Test score: 0.8272
+--------------------------------------------------
+Epoch 103 | Batch 0 | Loss: 0.5140 | LR: 0.000914
+
+Epoch 103 Summary:
+Average Loss: 0.5412
+Learning Rate: 0.000914
+Time: 18.76s
+test time:  0.6331720352172852
+Validation score: 0.8299
+Test score: 0.8299
+--------------------------------------------------
+Epoch 104 | Batch 0 | Loss: 0.5466 | LR: 0.000912
+
+Epoch 104 Summary:
+Average Loss: 0.5412
+Learning Rate: 0.000912
+Time: 18.73s
+test time:  0.6324906349182129
+Validation score: 0.8293
+Test score: 0.8292
+--------------------------------------------------
+Epoch 105 | Batch 0 | Loss: 0.4869 | LR: 0.000910
+
+Epoch 105 Summary:
+Average Loss: 0.5410
+Learning Rate: 0.000910
+Time: 18.77s
+test time:  0.6333630084991455
+Validation score: 0.8305
+Test score: 0.8291
+--------------------------------------------------
+Epoch 106 | Batch 0 | Loss: 0.5289 | LR: 0.000908
+
+Epoch 106 Summary:
+Average Loss: 0.5400
+Learning Rate: 0.000908
+Time: 18.70s
+test time:  0.6323387622833252
+Validation score: 0.8286
+Test score: 0.8285
+--------------------------------------------------
+Epoch 107 | Batch 0 | Loss: 0.5289 | LR: 0.000906
+
+Epoch 107 Summary:
+Average Loss: 0.5393
+Learning Rate: 0.000906
+Time: 18.74s
+test time:  0.6324112415313721
+Validation score: 0.8289
+Test score: 0.8287
+--------------------------------------------------
+Epoch 108 | Batch 0 | Loss: 0.5737 | LR: 0.000905
+
+Epoch 108 Summary:
+Average Loss: 0.5386
+Learning Rate: 0.000905
+Time: 18.75s
+test time:  0.6321818828582764
+Validation score: 0.8296
+Test score: 0.8295
+--------------------------------------------------
+Epoch 109 | Batch 0 | Loss: 0.5434 | LR: 0.000903
+
+Epoch 109 Summary:
+Average Loss: 0.5385
+Learning Rate: 0.000903
+Time: 18.77s
+test time:  0.6313769817352295
+Validation score: 0.8273
+Test score: 0.8271
+--------------------------------------------------
+Epoch 110 | Batch 0 | Loss: 0.5432 | LR: 0.000901
+
+Epoch 110 Summary:
+Average Loss: 0.5379
+Learning Rate: 0.000901
+Time: 18.75s
+test time:  0.633033037185669
+Validation score: 0.8273
+Test score: 0.8270
+--------------------------------------------------
+Epoch 111 | Batch 0 | Loss: 0.5515 | LR: 0.000899
+
+Epoch 111 Summary:
+Average Loss: 0.5384
+Learning Rate: 0.000899
+Time: 18.79s
+test time:  0.6300864219665527
+Validation score: 0.8284
+Test score: 0.8280
+--------------------------------------------------

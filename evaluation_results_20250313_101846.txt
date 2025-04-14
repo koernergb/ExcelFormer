@@ -1,0 +1,117 @@
+Starting evaluation at 20250313_101846
+Saving results to: evaluation_results_20250313_101846.txt
+Loading model from: ./result/ExcelFormer/default/mixup(none)/android_security/42/pytorch_model.pt
+
+Saved Metrics from Training:
+Best validation score: 0.8287
+Best test score: 0.8281
+Final test score: 0.8280
+Loading data from: /home/umflint.edu/koernerg/excelformer/ExcelFormer/DATA/android_security
+Initial DataFrame shape: (870514, 50)
+Loading top 25 XGBoost features: ['ContentRating' 'Genre' 'privacy_policy_link' 'developer_website'
+ 'CurrentVersion' 'days_since_last_update' 'AndroidVersion' 'isSpamming'
+ 'max_downloads_log' 'LenWhatsNew' 'DeveloperCategory'
+ 'lowest_android_version' 'PHONE' 'OneStarRatings' 'developer_address'
+ 'FourStarRatings' 'intent' 'ReviewsAverage' 'highest_android_version'
+ 'STORAGE' 'LastUpdated' 'TwoStarRatings' 'LOCATION' 'FiveStarRatings'
+ 'ThreeStarRatings']
+Shape after dropping NaNs: (724160, 49)
+Shape after selecting top features: (724160, 26)
+Selected features: ['ContentRating', 'Genre', 'privacy_policy_link', 'developer_website', 'CurrentVersion', 'days_since_last_update', 'AndroidVersion', 'isSpamming', 'max_downloads_log', 'LenWhatsNew', 'DeveloperCategory', 'lowest_android_version', 'PHONE', 'OneStarRatings', 'developer_address', 'FourStarRatings', 'intent', 'ReviewsAverage', 'highest_android_version', 'STORAGE', 'LastUpdated', 'TwoStarRatings', 'LOCATION', 'FiveStarRatings', 'ThreeStarRatings']
+Feature types: ContentRating               object
+Genre                       object
+privacy_policy_link          int64
+developer_website            int64
+CurrentVersion              object
+days_since_last_update       int64
+AndroidVersion              object
+isSpamming                   int64
+max_downloads_log          float64
+LenWhatsNew                  int64
+DeveloperCategory           object
+lowest_android_version      object
+PHONE                        int64
+OneStarRatings             float64
+developer_address            int64
+FourStarRatings            float64
+intent                       int64
+ReviewsAverage             float64
+highest_android_version     object
+STORAGE                      int64
+LastUpdated                  int64
+TwoStarRatings             float64
+LOCATION                     int64
+FiveStarRatings            float64
+ThreeStarRatings           float64
+dtype: object
+
+=== Initial Data Analysis ===
+Number of samples: 108624
+Number of features: 25
+Class distribution: [49516 59108]
+
+=== Feature Processing Details ===
+Number of numerical features: 18
+Number of categorical features: 7
+
+=== Initial Feature Shapes ===
+Initial numerical features: (108624, 18)
+Initial categorical features: (108624, 7)
+
+=== Categorical Encoding Debug ===
+args.catenc: True
+dataset.X_cat is not None: True
+Cardinalities: [6, 165, 1337, 84, 4, 13, 5]
+Encoded categorical shape: (108624, 7)
+Current numerical shape: (108624, 18)
+Final concatenated shape: (108624, 25)
+
+Shape after categorical encoding: (108624, 25)
+d_numerical: 25
+weight shape: torch.Size([25, 256])
+bias shape: torch.Size([25, 256])
+
+Model weight dtype: torch.float32
+
+=== Feature Verification ===
+Model input dimension: 25
+Current feature count: 25
+
+Feature names:
+1. ContentRating
+2. Genre
+3. CurrentVersion
+4. AndroidVersion
+5. DeveloperCategory
+6. lowest_android_version
+7. highest_android_version
+8. privacy_policy_link
+9. developer_website
+10. days_since_last_update
+11. isSpamming
+12. max_downloads_log
+13. LenWhatsNew
+14. PHONE
+15. OneStarRatings
+16. developer_address
+17. FourStarRatings
+18. intent
+19. ReviewsAverage
+20. STORAGE
+21. LastUpdated
+22. TwoStarRatings
+23. LOCATION
+24. FiveStarRatings
+25. ThreeStarRatings
+
+Evaluating validation and test sets:
+
+VALIDATION SET METRICS:
+ROC AUC: 0.8287
+Accuracy: 0.7424
+
+TEST SET METRICS:
+ROC AUC: 0.8280
+Accuracy: 0.7412
+
+Evaluation complete!

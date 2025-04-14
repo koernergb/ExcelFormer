@@ -1,0 +1,103 @@
+Entered training script...
+Python executable: /home/umflint.edu/koernerg/excelformer/ExcelFormer/env/bin/python
+Python path: ['/home/umflint.edu/koernerg/excelformer/ExcelFormer', '/home/umflint.edu/koernerg/.pyenv/versions/3.8.18/lib/python38.zip', '/home/umflint.edu/koernerg/.pyenv/versions/3.8.18/lib/python3.8', '/home/umflint.edu/koernerg/.pyenv/versions/3.8.18/lib/python3.8/lib-dynload', '/home/umflint.edu/koernerg/excelformer/ExcelFormer/env/lib/python3.8/site-packages', '/home/umflint.edu/koernerg/excelformer/ExcelFormer/env/lib/python3.8/site-packages/setuptools/_vendor']
+LD_LIBRARY_PATH: Not set
+CUDA_HOME: Not set
+Torch version: 1.11.0+cu113
+Torch CUDA version: 11.3
+CUDA available: True
+CUDA device count: 1
+nvidia-smi output:
+ Mon Mar 17 11:24:19 2025       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 560.35.03              Driver Version: 560.35.03      CUDA Version: 12.6     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce RTX 4090        Off |   00000000:01:00.0 Off |                  Off |
+| 32%   37C    P8              3W /  450W |      18MiB /  24564MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|    0   N/A  N/A      2482      G   /usr/lib/xorg/Xorg                              4MiB |
++-----------------------------------------------------------------------------------------+
+
+Passed imports...
+CUDA available: True
+CUDA device count: 1
+Current CUDA device: 0
+CUDA device name: NVIDIA GeForce RTX 4090
+Loading data from: /home/umflint.edu/koernerg/excelformer/ExcelFormer/DATA/android_security
+Initial DataFrame shape: (870514, 50)
+Shape after dropping NaNs: (724160, 49)
+Shape after dropping pkgname: (724160, 48)
+Selected features: ['DevRegisteredDomain', 'LenDescription', 'LenWhatsNew', 'ReviewsAverage', 'CurrentVersion', 'Genre', 'ContentRating', 'LastUpdated', 'LenTitle', 'AndroidVersion', 'DeveloperCategory', 'isSpamming', 'net', 'intent', 'bluetooth', 'app', 'provider', 'speech', 'nfc', 'media', 'hardware', 'google', 'os', 'CALENDAR', 'CAMERA', 'CONTACTS', 'LOCATION', 'MICROPHONE', 'PHONE', 'SENSORS', 'SMS', 'STORAGE', 'FourStarRatings', 'ThreeStarRatings', 'FiveStarRatings', 'OneStarRatings', 'TwoStarRatings', 'lowest_android_version', 'highest_android_version', 'paid', 'file_size', 'max_downloads_log', 'developer_email', 'privacy_policy_link', 'developer_address', 'developer_website', 'days_since_last_update']
+Feature types: DevRegisteredDomain          int64
+LenDescription               int64
+LenWhatsNew                  int64
+ReviewsAverage             float64
+CurrentVersion              object
+Genre                       object
+ContentRating               object
+LastUpdated                  int64
+LenTitle                     int64
+AndroidVersion              object
+DeveloperCategory           object
+isSpamming                   int64
+net                          int64
+intent                       int64
+bluetooth                    int64
+app                          int64
+provider                     int64
+speech                       int64
+nfc                          int64
+media                        int64
+hardware                     int64
+google                       int64
+os                           int64
+CALENDAR                     int64
+CAMERA                       int64
+CONTACTS                     int64
+LOCATION                     int64
+MICROPHONE                   int64
+PHONE                        int64
+SENSORS                      int64
+SMS                          int64
+STORAGE                      int64
+FourStarRatings            float64
+ThreeStarRatings           float64
+FiveStarRatings            float64
+OneStarRatings             float64
+TwoStarRatings             float64
+lowest_android_version      object
+highest_android_version     object
+paid                         int64
+file_size                    int64
+max_downloads_log          float64
+developer_email              int64
+privacy_policy_link          int64
+developer_address            int64
+developer_website            int64
+days_since_last_update       int64
+dtype: object
+/home/umflint.edu/koernerg/excelformer/ExcelFormer/lib/data.py:268: FutureWarning: elementwise comparison failed; returning scalar instead, but in the future will perform elementwise comparison
+  nan_masks = {k: v == CAT_MISSING_VALUE for k, v in X.items()}
+Traceback (most recent call last):
+  File "run_default_config_excel.py", line 155, in <module>
+    dataset = build_dataset(DATA / args.dataset, transformation, T_cache)
+  File "/home/umflint.edu/koernerg/excelformer/ExcelFormer/lib/data.py", line 446, in build_dataset
+    return transform_dataset(dataset, transformations, path if cache else None)
+  File "/home/umflint.edu/koernerg/excelformer/ExcelFormer/lib/data.py", line 413, in transform_dataset
+    X_cat = cat_process_nans(dataset.X_cat, transformations.cat_nan_policy)
+  File "/home/umflint.edu/koernerg/excelformer/ExcelFormer/lib/data.py", line 269, in cat_process_nans
+    if any(x.any() for x in nan_masks.values()):  # type: ignore[code]
+  File "/home/umflint.edu/koernerg/excelformer/ExcelFormer/lib/data.py", line 269, in <genexpr>
+    if any(x.any() for x in nan_masks.values()):  # type: ignore[code]
+AttributeError: 'bool' object has no attribute 'any'
