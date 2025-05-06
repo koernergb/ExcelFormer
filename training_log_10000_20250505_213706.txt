@@ -1,0 +1,73 @@
+Entered training script...
+Python executable: /home/umflint.edu/koernerg/excelformer/ExcelFormer/env/bin/python
+Python path: ['/home/umflint.edu/koernerg/excelformer/ExcelFormer', '/home/umflint.edu/koernerg/.pyenv/versions/3.8.18/lib/python38.zip', '/home/umflint.edu/koernerg/.pyenv/versions/3.8.18/lib/python3.8', '/home/umflint.edu/koernerg/.pyenv/versions/3.8.18/lib/python3.8/lib-dynload', '/home/umflint.edu/koernerg/excelformer/ExcelFormer/env/lib/python3.8/site-packages', '/home/umflint.edu/koernerg/excelformer/ExcelFormer/env/lib/python3.8/site-packages/setuptools/_vendor']
+LD_LIBRARY_PATH: Not set
+CUDA_HOME: Not set
+Torch version: 1.11.0+cu113
+Torch CUDA version: 11.3
+CUDA available: True
+CUDA device count: 1
+nvidia-smi output:
+ Mon May  5 21:37:06 2025       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 560.35.03              Driver Version: 560.35.03      CUDA Version: 12.6     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce RTX 4090        Off |   00000000:01:00.0 Off |                  Off |
+| 32%   37C    P8              3W /  450W |      18MiB /  24564MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|    0   N/A  N/A      2587      G   /usr/lib/xorg/Xorg                              4MiB |
++-----------------------------------------------------------------------------------------+
+
+Passed imports...
+CUDA available: True
+CUDA device count: 1
+Current CUDA device: 0
+CUDA device name: NVIDIA GeForce RTX 4090
+Loaded indices for sample size 10000:
+  train: (7000,), val: (1500,), test: (1500,)
+Loading data from: /home/umflint.edu/koernerg/excelformer/ExcelFormer/DATA/android_security
+Initial DataFrame shape: (870514, 50)
+Shape after dropping NaNs: (724160, 49)
+Shape after dropping pkgname: (724160, 48)
+Loaded indices for sample size 10000:
+  train: (7000,), val: (1500,), test: (1500,)
+Traceback (most recent call last):
+  File "/home/umflint.edu/koernerg/excelformer/ExcelFormer/env/lib/python3.8/site-packages/pandas/core/indexing.py", line 1530, in _get_list_axis
+    return self.obj._take_with_is_copy(key, axis=axis)
+  File "/home/umflint.edu/koernerg/excelformer/ExcelFormer/env/lib/python3.8/site-packages/pandas/core/generic.py", line 3628, in _take_with_is_copy
+    result = self.take(indices=indices, axis=axis)
+  File "/home/umflint.edu/koernerg/excelformer/ExcelFormer/env/lib/python3.8/site-packages/pandas/core/generic.py", line 3615, in take
+    new_data = self._mgr.take(
+  File "/home/umflint.edu/koernerg/excelformer/ExcelFormer/env/lib/python3.8/site-packages/pandas/core/internals/managers.py", line 862, in take
+    indexer = maybe_convert_indices(indexer, n, verify=verify)
+  File "/home/umflint.edu/koernerg/excelformer/ExcelFormer/env/lib/python3.8/site-packages/pandas/core/indexers.py", line 292, in maybe_convert_indices
+    raise IndexError("indices are out-of-bounds")
+IndexError: indices are out-of-bounds
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "run_default_config_excel.py", line 179, in <module>
+    dataset = build_dataset(
+  File "/home/umflint.edu/koernerg/excelformer/ExcelFormer/lib/data.py", line 461, in build_dataset
+    dataset = Dataset.from_dir(
+  File "/home/umflint.edu/koernerg/excelformer/ExcelFormer/lib/data.py", line 103, in from_dir
+    df_train = df.iloc[train_idx]
+  File "/home/umflint.edu/koernerg/excelformer/ExcelFormer/env/lib/python3.8/site-packages/pandas/core/indexing.py", line 931, in __getitem__
+    return self._getitem_axis(maybe_callable, axis=axis)
+  File "/home/umflint.edu/koernerg/excelformer/ExcelFormer/env/lib/python3.8/site-packages/pandas/core/indexing.py", line 1557, in _getitem_axis
+    return self._get_list_axis(key, axis=axis)
+  File "/home/umflint.edu/koernerg/excelformer/ExcelFormer/env/lib/python3.8/site-packages/pandas/core/indexing.py", line 1533, in _get_list_axis
+    raise IndexError("positional indexers are out-of-bounds") from err
+IndexError: positional indexers are out-of-bounds

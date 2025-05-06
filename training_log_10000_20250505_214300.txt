@@ -1,0 +1,162 @@
+Entered training script...
+Python executable: /home/umflint.edu/koernerg/excelformer/ExcelFormer/env/bin/python
+Python path: ['/home/umflint.edu/koernerg/excelformer/ExcelFormer', '/home/umflint.edu/koernerg/.pyenv/versions/3.8.18/lib/python38.zip', '/home/umflint.edu/koernerg/.pyenv/versions/3.8.18/lib/python3.8', '/home/umflint.edu/koernerg/.pyenv/versions/3.8.18/lib/python3.8/lib-dynload', '/home/umflint.edu/koernerg/excelformer/ExcelFormer/env/lib/python3.8/site-packages', '/home/umflint.edu/koernerg/excelformer/ExcelFormer/env/lib/python3.8/site-packages/setuptools/_vendor']
+LD_LIBRARY_PATH: Not set
+CUDA_HOME: Not set
+Torch version: 1.11.0+cu113
+Torch CUDA version: 11.3
+CUDA available: True
+CUDA device count: 1
+nvidia-smi output:
+ Mon May  5 21:43:01 2025       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 560.35.03              Driver Version: 560.35.03      CUDA Version: 12.6     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce RTX 4090        Off |   00000000:01:00.0 Off |                  Off |
+|  0%   38C    P8              2W /  450W |      18MiB /  24564MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|    0   N/A  N/A      2587      G   /usr/lib/xorg/Xorg                              4MiB |
++-----------------------------------------------------------------------------------------+
+
+Passed imports...
+CUDA available: True
+CUDA device count: 1
+Current CUDA device: 0
+CUDA device name: NVIDIA GeForce RTX 4090
+Loaded indices for sample size 10000:
+  train: (7000,), val: (1500,), test: (1500,)
+Loading data from: /home/umflint.edu/koernerg/excelformer/ExcelFormer/DATA/android_security
+Initial DataFrame shape: (870514, 50)
+Shape after dropping NaNs: (724160, 49)
+Shape after dropping pkgname: (724160, 48)
+Loaded indices for sample size 10000:
+  train: (7000,), val: (1500,), test: (1500,)
+Final feature order used for training (should match XGBoost):
+['ContentRating', 'Genre', 'CurrentVersion', 'AndroidVersion', 'DeveloperCategory', 'lowest_android_version', 'highest_android_version', 'privacy_policy_link', 'developer_website', 'days_since_last_update', 'isSpamming', 'max_downloads_log', 'LenWhatsNew', 'PHONE', 'OneStarRatings', 'developer_address', 'FourStarRatings', 'intent', 'ReviewsAverage', 'STORAGE', 'LastUpdated', 'TwoStarRatings', 'LOCATION', 'FiveStarRatings', 'ThreeStarRatings']
+Numerical features (in order): ['privacy_policy_link', 'developer_website', 'days_since_last_update', 'isSpamming', 'max_downloads_log', 'LenWhatsNew', 'PHONE', 'OneStarRatings', 'developer_address', 'FourStarRatings', 'intent', 'ReviewsAverage', 'STORAGE', 'LastUpdated', 'TwoStarRatings', 'LOCATION', 'FiveStarRatings', 'ThreeStarRatings']
+Categorical features (in order): ['ContentRating', 'Genre', 'CurrentVersion', 'AndroidVersion', 'DeveloperCategory', 'lowest_android_version', 'highest_android_version']
+Final feature order used for training:
+['ContentRating', 'Genre', 'CurrentVersion', 'AndroidVersion', 'DeveloperCategory', 'lowest_android_version', 'highest_android_version', 'privacy_policy_link', 'developer_website', 'days_since_last_update', 'isSpamming', 'max_downloads_log', 'LenWhatsNew', 'PHONE', 'OneStarRatings', 'developer_address', 'FourStarRatings', 'intent', 'ReviewsAverage', 'STORAGE', 'LastUpdated', 'TwoStarRatings', 'LOCATION', 'FiveStarRatings', 'ThreeStarRatings']
+dataset.X_num['train'].shape: (7000, 25)
+dataset.X_num['train'].shape: (7000, 25)
+X_num shape in prepare_tensors: torch.Size([7000, 25])
+X_num shape after prepare_tensors: torch.Size([7000, 25])
+X_num shape before reorder: torch.Size([7000, 25])
+x_num shape in mi_func: (7000, 25)
+mi_scores shape: (25,)
+Original number of features: 25
+Number of features kept: 15 (MI score >= 0.01)
+Updated n_num_features: 15
+
+=== Feature Selection Debug ===
+Original features shape: (7000, 25)
+MI scores shape: (25,)
+Selected feature indices (mi_ranks): [ 9 20  0  3  7  5 11 24 14  1  2 10 12 23 21]
+Number of selected features: 15
+=== End Debug ===
+
+
+=== Mutual Information Feature Analysis ===
+
+Features ranked by MI score:
+days_since_last_update: 0.0557
+LastUpdated: 0.0488
+ContentRating: 0.0431
+AndroidVersion: 0.0338
+privacy_policy_link: 0.0309
+lowest_android_version: 0.0228
+max_downloads_log: 0.0223
+ThreeStarRatings: 0.0188
+OneStarRatings: 0.0173
+Genre: 0.0153
+CurrentVersion: 0.0152
+isSpamming: 0.0151
+LenWhatsNew: 0.0134
+FiveStarRatings: 0.0121
+TwoStarRatings: 0.0105
+FourStarRatings: 0.0093
+PHONE: 0.0085
+intent: 0.0046
+ReviewsAverage: 0.0018
+DeveloperCategory: 0.0016
+STORAGE: 0.0016
+developer_website: 0.0015
+LOCATION: 0.0014
+highest_android_version: 0.0000
+developer_address: 0.0000
+MI scores for all features: [0.04305118 0.0152774  0.01517851 0.0337809  0.00158222 0.02277482
+ 0.         0.03094328 0.00146106 0.05565499 0.01510087 0.02230304
+ 0.01340822 0.00847706 0.01730341 0.         0.00929967 0.00464678
+ 0.00182677 0.00155956 0.04881132 0.01048184 0.00143389 0.01210355
+ 0.01877619]
+Features selected (MI >= 0.01): [ 9 20  0  3  7  5 11 24 14  1  2 10 12 23 21]
+Number of features: Original=25, Selected=15
+=== End Analysis ===
+
+
+=== Final Feature List for Training ===
+Total selected features: 15
+
+Feature counts:
+Total selected features: 15
+Numerical features: 10
+Categorical features: 5
+
+Features in order:
+1. days_since_last_update
+2. LastUpdated
+3. ContentRating
+4. AndroidVersion
+5. privacy_policy_link
+6. lowest_android_version
+7. max_downloads_log
+8. ThreeStarRatings
+9. OneStarRatings
+10. Genre
+11. CurrentVersion
+12. isSpamming
+13. LenWhatsNew
+14. FiveStarRatings
+15. TwoStarRatings
+
+Starting training...
+X_num shape in data loaders: torch.Size([7000, 15])
+data_list contents and shapes: [{'train': torch.Size([7000, 15]), 'val': torch.Size([1500, 15]), 'test': torch.Size([1500, 15])}, {'train': torch.Size([7000]), 'val': torch.Size([1500]), 'test': torch.Size([1500])}]
+d_numerical: 15
+weight shape: torch.Size([15, 256])
+bias shape: torch.Size([15, 256])
+test time:  0.001980304718017578
+Test score before training:  0.5407
+Starting training from epoch 1
+Epoch 001 | Batch 0 | Loss: 0.6931 | LR: 0.000100
+
+Epoch 001 Summary:
+Average Loss: 0.6783
+Learning Rate: 0.000100
+Time: 0.18s
+test time:  0.0005815029144287109
+Validation score: 0.7095
+Test score: 0.7310
+--------------------------------------------------
+ <<< BEST VALIDATION EPOCH: 0.7095
+Traceback (most recent call last):
+  File "run_default_config_excel.py", line 657, in <module>
+    torch.save(checkpoint, f"{args.output}/pytorch_model.pt")
+  File "/home/umflint.edu/koernerg/excelformer/ExcelFormer/env/lib/python3.8/site-packages/torch/serialization.py", line 377, in save
+    with _open_file_like(f, 'wb') as opened_file:
+  File "/home/umflint.edu/koernerg/excelformer/ExcelFormer/env/lib/python3.8/site-packages/torch/serialization.py", line 231, in _open_file_like
+    return _open_file(name_or_buffer, mode)
+  File "/home/umflint.edu/koernerg/excelformer/ExcelFormer/env/lib/python3.8/site-packages/torch/serialization.py", line 212, in __init__
+    super(_open_file, self).__init__(open(name, mode))
+FileNotFoundError: [Errno 2] No such file or directory: 'result/ExcelFormer/default/mixup(hidden_mix)/android_security/42/10000/pytorch_model.pt'

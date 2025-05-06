@@ -18,14 +18,12 @@ from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 
-
 from . import env, util
 from .metrics import calculate_metrics as calculate_metrics_
 from .util import TaskType
 
 ArrayDict = Dict[str, np.ndarray]
 TensorDict = Dict[str, torch.Tensor]
-
 
 CAT_MISSING_VALUE = '__nan__'
 CAT_RARE_VALUE = '__rare__'
@@ -34,7 +32,6 @@ NumNanPolicy = Literal['drop-rows', 'mean']
 CatNanPolicy = Literal['most_frequent']
 CatEncoding = Literal['one-hot', 'counter']
 YPolicy = Literal['default']
-
 
 class StandardScaler1d(StandardScaler):
     def partial_fit(self, X, *args, **kwargs):
@@ -49,11 +46,9 @@ class StandardScaler1d(StandardScaler):
         assert X.ndim == 1
         return super().inverse_transform(X[:, None], *args, **kwargs).squeeze(1)
 
-
 def get_category_sizes(X: Union[torch.Tensor, np.ndarray]) -> List[int]:
     XT = X.T.cpu().tolist() if isinstance(X, torch.Tensor) else X.T.tolist()
     return [len(set(x)) for x in XT]
-
 
 @dataclass(frozen=False)
 class Dataset:
@@ -67,62 +62,107 @@ class Dataset:
     cat_feature_names: Optional[List[str]] = None
 
     @classmethod
-    def from_dir(cls, dir_: Union[Path, str]) -> 'Dataset':
+    def from_dir(
+        cls, 
+        dir_: Union[Path, str], 
+        sample_size: int = None, 
+        indices_dir: str = None,
+        selected_features: list = None
+    ) -> 'Dataset':
         dir_ = Path(dir_)
-        
-        # Load Android security data
         print(f"Loading data from: {dir_}")
         df = pd.read_csv(dir_ / 'corrected_permacts.csv')
         print(f"Initial DataFrame shape: {df.shape}")
-        
-        # Drop rows with NaN values and remove Unnamed: 0 column
+        print("[DEBUG][DATA] DataFrame columns:", df.columns.tolist())
         df = df.dropna()
         if 'Unnamed: 0' in df.columns:
             df = df.drop('Unnamed: 0', axis=1)
         print(f"Shape after dropping NaNs: {df.shape}")
-        
-        # Drop pkgname column
         df = df.drop(['pkgname'], axis=1)
         print(f"Shape after dropping pkgname: {df.shape}")
 
-        # Split features and target
-        X = df.drop(['status'], axis=1)
-        y = df['status']
-        
-        print("Selected features:", list(X.columns))
-        print("Feature types:", X.dtypes)
-        
-        # Create train/val/test splits
-        X_train, X_temp, y_train, y_temp = train_test_split(
-            X, y, test_size=0.3, random_state=42, stratify=y
-        )
-        X_val, X_test, y_val, y_test = train_test_split(
-            X_temp, y_temp, test_size=0.5, random_state=42, stratify=y_temp
-        )
+        # === ENFORCE FEATURE LIST AND ORDER ===
+        if selected_features is not None:
+            # Add a check to ensure all features exist
+            missing = [f for f in selected_features if f not in df.columns]
+            if missing:
+                raise ValueError(f"Missing features in DataFrame: {missing}")
+            print("[DEBUG][DATA] Selected features:", selected_features)
+            df = df[selected_features + ['status']]  # keep target
+            print("[DEBUG][DATA] DataFrame columns after selection:", df.columns.tolist())
+
+        # === Subset using provided indices if sample_size is specified ===
+        if sample_size is not None and indices_dir is not None:
+            # Save the original index before resetting
+            df['orig_index'] = df.index
+            df = df.reset_index(drop=True)
+            orig_index_to_new = dict(zip(df['orig_index'], df.index))
+            train_idx = np.load(f"{indices_dir}/train_indices_{sample_size}.npy")
+            val_idx = np.load(f"{indices_dir}/val_indices_{sample_size}.npy")
+            test_idx = np.load(f"{indices_dir}/test_indices_{sample_size}.npy")
+            print(f"Loaded indices for sample size {sample_size}:")
+            print(f"  train: {train_idx.shape}, val: {val_idx.shape}, test: {test_idx.shape}")
+            # Map original indices to new positions
+            train_pos = [orig_index_to_new[i] for i in train_idx if i in orig_index_to_new]
+            val_pos = [orig_index_to_new[i] for i in val_idx if i in orig_index_to_new]
+            test_pos = [orig_index_to_new[i] for i in test_idx if i in orig_index_to_new]
+            df_train = df.iloc[train_pos]
+            df_val = df.iloc[val_pos]
+            df_test = df.iloc[test_pos]
+            X_train, y_train = df_train.drop(['status', 'orig_index'], axis=1), df_train['status']
+            X_val, y_val = df_val.drop(['status', 'orig_index'], axis=1), df_val['status']
+            X_test, y_test = df_test.drop(['status', 'orig_index'], axis=1), df_test['status']
+        else:
+            X = df.drop(['status'], axis=1)
+            y = df['status']
+            X_train, X_temp, y_train, y_temp = train_test_split(
+                X, y, test_size=0.3, random_state=42, stratify=y
+            )
+            X_val, X_test, y_val, y_test = train_test_split(
+                X_temp, y_temp, test_size=0.5, random_state=42, stratify=y_temp
+            )
+
+        print("[DEBUG][DATA] X_train columns:", X_train.columns.tolist())
+        print("[DEBUG][DATA] X_val columns:", X_val.columns.tolist())
+        print("[DEBUG][DATA] X_test columns:", X_test.columns.tolist())
 
         # Store feature names before converting to numpy arrays
-        num_features = X.select_dtypes(include=['int64', 'float64']).columns.tolist()
-        cat_features = X.select_dtypes(include=['object']).columns.tolist()
+        if selected_features is not None:
+            all_types = df.dtypes
+            num_features = [f for f in selected_features if all_types[f] in ['int64', 'float64']]
+            cat_features = [f for f in selected_features if all_types[f] == 'object']
+            print("Final feature order used for training (should match XGBoost):")
+            print(selected_features)
+            print("Numerical features (in order):", num_features)
+            print("Categorical features (in order):", cat_features)
+        else:
+            num_features = X_train.select_dtypes(include=['int64', 'float64']).columns.tolist()
+            cat_features = X_train.select_dtypes(include=['object']).columns.tolist()
 
-        # Format data for model
         X_num = {
             'train': X_train.select_dtypes(include=['int64', 'float64']).values.astype(np.float32),
             'val': X_val.select_dtypes(include=['int64', 'float64']).values.astype(np.float32),
             'test': X_test.select_dtypes(include=['int64', 'float64']).values.astype(np.float32)
         }
-        
         X_cat = {
             'train': X_train.select_dtypes(include=['object']).values,
             'val': X_val.select_dtypes(include=['object']).values,
             'test': X_test.select_dtypes(include=['object']).values
         }
-        
+        print("[DEBUG][DATA] num_features:", num_features)
+        print("[DEBUG][DATA] cat_features:", cat_features)
+        print("[DEBUG][DATA] X_num shapes:", {k: v.shape for k, v in X_num.items()})
+        print("[DEBUG][DATA] X_cat shapes:", {k: v.shape for k, v in X_cat.items()})
+
         y_dict = {
             'train': y_train.values,
             'val': y_val.values,
             'test': y_test.values
         }
-
+        print("Final feature order used for training:")
+        print(list(X_train.columns))
+        print("[DEBUG][DATA] Dataset.num_feature_names:", num_features)
+        print("[DEBUG][DATA] Dataset.cat_feature_names:", cat_features)
         return Dataset(
             X_num=X_num,
             X_cat=X_cat,
@@ -193,7 +233,6 @@ class Dataset:
             part_metrics['score'] = score_sign * part_metrics[score_key]
         return metrics
 
-
 def num_process_nans(dataset: Dataset, policy: Optional[NumNanPolicy]) -> Dataset:
     assert dataset.X_num is not None
     nan_masks = {k: np.isnan(v) for k, v in dataset.X_num.items()}
@@ -226,8 +265,6 @@ def num_process_nans(dataset: Dataset, policy: Optional[NumNanPolicy]) -> Datase
         assert util.raise_unknown('policy', policy)
     return dataset
 
-
-# Inspired by: https://github.com/Yura52/rtdl/blob/a4c93a32b334ef55d2a0559a4407c8306ffeeaee/lib/data.py#L20
 def normalize(
     X: ArrayDict, normalization: Normalization, seed: Optional[int]
 ) -> ArrayDict:
@@ -254,7 +291,6 @@ def normalize(
     normalizer.fit(X_train)
     return {k: normalizer.transform(v) for k, v in X.items()}  # type: ignore[code]
 
-
 def cat_process_nans(X: ArrayDict, policy: Optional[CatNanPolicy]) -> ArrayDict:
     assert X is not None
     nan_masks = {k: v == CAT_MISSING_VALUE for k, v in X.items()}
@@ -272,7 +308,6 @@ def cat_process_nans(X: ArrayDict, policy: Optional[CatNanPolicy]) -> ArrayDict:
         X_new = X
     return X_new
 
-
 def cat_drop_rare(X: ArrayDict, min_frequency: float) -> ArrayDict:
     assert 0.0 < min_frequency < 1.0
     min_count = round(len(X['train']) * min_frequency)
@@ -288,7 +323,6 @@ def cat_drop_rare(X: ArrayDict, min_frequency: float) -> ArrayDict:
                 ]
             )
     return {k: np.array(v).T for k, v in X_new.items()}
-
 
 def cat_encode(
     X: ArrayDict,
@@ -335,7 +369,6 @@ def cat_encode(
     else:
         util.raise_unknown('encoding', encoding)
 
-
 def build_target(
     y: ArrayDict, policy: Optional[YPolicy], task_type: TaskType
 ) -> Tuple[ArrayDict, Dict[str, Any]]:
@@ -352,7 +385,6 @@ def build_target(
         util.raise_unknown('policy', policy)
     return y, info
 
-
 @dataclass(frozen=True)
 class Transformations:
     seed: int = 0
@@ -362,7 +394,6 @@ class Transformations:
     cat_min_frequency: Optional[float] = None
     cat_encoding: Optional[CatEncoding] = None
     y_policy: Optional[YPolicy] = 'default'
-
 
 def transform_dataset(
     dataset: Dataset,
@@ -429,14 +460,18 @@ def transform_dataset(
         util.dump_pickle((transformations, dataset), cache_path)
     return dataset
 
-
 def build_dataset(
-    path: Union[str, Path], transformations: Transformations, cache: bool
+    path: Union[str, Path], transformations: Transformations, cache: bool,
+    sample_size: int = None, indices_dir: str = None, selected_features: list = None
 ) -> Dataset:
     path = Path(path)
-    dataset = Dataset.from_dir(path)
+    dataset = Dataset.from_dir(
+        path, 
+        sample_size=sample_size, 
+        indices_dir=indices_dir, 
+        selected_features=selected_features
+    )
     return transform_dataset(dataset, transformations, path if cache else None)
-
 
 def prepare_tensors(
     dataset: Dataset, device: Union[str, torch.device]
@@ -459,7 +494,6 @@ def prepare_tensors(
         Y = {k: v.float() for k, v in Y.items()}
     print(f"X_num shape in prepare_tensors: {X_num['train'].shape}")
     return X_num, X_cat, Y
-
 
 def load_dataset_info(dataset_dir_name: str) -> Dict[str, Any]:
     path = env.DATA / dataset_dir_name

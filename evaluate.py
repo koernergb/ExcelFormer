@@ -21,15 +21,23 @@ from pathlib import Path
 from bin import ExcelFormer
 from lib import Transformations, build_dataset, prepare_tensors, make_optimizer, DATA
 
+# XGBoost feature list (must match training)
+XGBOOST_FEATURES = [
+    'ContentRating', 'Genre', 'CurrentVersion', 'AndroidVersion', 'DeveloperCategory',
+    'lowest_android_version', 'highest_android_version', 'privacy_policy_link',
+    'developer_website', 'days_since_last_update', 'isSpamming', 'max_downloads_log',
+    'LenWhatsNew', 'PHONE', 'OneStarRatings', 'developer_address', 'FourStarRatings',
+    'intent', 'ReviewsAverage', 'STORAGE', 'LastUpdated', 'TwoStarRatings',
+    'LOCATION', 'FiveStarRatings', 'ThreeStarRatings'
+]
+
 def get_args():
     parser = argparse.ArgumentParser()
-    # With 25 features (no unnamed: 0 or pkgname)
     parser.add_argument("--model_path", type=str, default='./result/ExcelFormer/default/mixup(none)/android_security/42/pytorch_model.pt')
-    # Original with wrong features
-    # parser.add_argument("--model_path", type=str, default='./result/ExcelFormer/default/mixup(hidden_mix)/android_security/42/500/pytorch_model.pt')
     parser.add_argument("--dataset", type=str, default='android_security')
     parser.add_argument("--normalization", type=str, default='quantile')
     parser.add_argument("--catenc", action='store_true', default=True)
+    parser.add_argument("--sample_size", type=int, default=None, help="Sample size for plot title/filename")
     return parser.parse_args()
 
 def main():
@@ -38,16 +46,31 @@ def main():
     
     # Load checkpoint
     checkpoint = torch.load(args.model_path, map_location='cpu')
-    print("\nSaved Metrics from Training:")
-    print(f"Best validation score: {checkpoint['best_score']:.4f}")
-    print(f"Best test score: {checkpoint['best_test_score']:.4f}")
-    print(f"Final test score: {checkpoint['final_test_score']:.4f}")
     
     # Load dataset
     transformation = Transformations(
         normalization=args.normalization if args.normalization != '__none__' else None
     )
-    dataset = build_dataset(DATA / args.dataset, transformation, cache=False)
+    dataset = build_dataset(
+        DATA / args.dataset,
+        transformation,
+        cache=False,
+        selected_features=XGBOOST_FEATURES
+    )
+
+    # === DEBUG PRINTS: Dataset structure and features ===
+    print("[DEBUG][EVAL] dataset.X_num keys:", list(dataset.X_num.keys()))
+    print("[DEBUG][EVAL] dataset.X_cat keys:", None if dataset.X_cat is None else list(dataset.X_cat.keys()))
+    print("[DEBUG][EVAL] dataset.X_num['test'] shape:", dataset.X_num['test'].shape)
+    print("[DEBUG][EVAL] dataset.X_cat['test'] shape:" if dataset.X_cat is not None else "No X_cat", 
+          None if dataset.X_cat is None else dataset.X_cat['test'].shape)
+    print("[DEBUG][EVAL] dataset.num_feature_names:", dataset.num_feature_names)
+    print("[DEBUG][EVAL] dataset.cat_feature_names:", dataset.cat_feature_names)
+    
+    print("\nSaved Metrics from Training:")
+    print(f"Best validation score: {checkpoint['best_score']:.4f}")
+    print(f"Best test score: {checkpoint['best_test_score']:.4f}")
+    print(f"Final test score: {checkpoint['final_test_score']:.4f}")
     
     print("\n=== Initial Data Analysis ===")
     print("Number of samples:", len(dataset.y['test']))
@@ -73,69 +96,57 @@ def main():
     print(f"args.catenc: {args.catenc}")
     print(f"dataset.X_cat is not None: {dataset.X_cat is not None}")
     if args.catenc and dataset.X_cat is not None:
+        print(">>> ENTERING CATBOOST ENCODER BLOCK")
         cardinalities = dataset.get_category_sizes('train')
-        print(f"Cardinalities: {cardinalities}")
         enc = CatBoostEncoder(
-            cols=list(range(len(cardinalities))), 
+            cols=list(range(len(cardinalities))),
             return_df=False
         ).fit(dataset.X_cat['train'], dataset.y['train'])
-        
-        # Encode both test and validation sets
+
         encoded_cat_test = enc.transform(dataset.X_cat['test']).astype(np.float32)
         encoded_cat_val = enc.transform(dataset.X_cat['val']).astype(np.float32)
-        
-        print(f"Encoded categorical shape: {encoded_cat_test.shape}")
-        print(f"Current numerical shape: {dataset.X_num['test'].shape}")
-        
-        # Concatenate for both sets
-        dataset.X_num['test'] = np.concatenate([
-            encoded_cat_test,
-            dataset.X_num['test']
-        ], axis=1)
-        dataset.X_num['val'] = np.concatenate([
-            encoded_cat_val,
-            dataset.X_num['val']
-        ], axis=1)
-        print(f"Final concatenated shape: {dataset.X_num['test'].shape}")
-    
-    print(f"\nShape after categorical encoding: {dataset.X_num['test'].shape}")
 
-    # 2. Load MI scores from cache - SAME AS TRAINING
-    mi_scores = np.load(f'cache/mi/{args.dataset}.npy')
-    print(f"Loaded MI scores shape: {mi_scores.shape}")
-    
-    # Get feature names from dataset
-    all_features = (dataset.cat_feature_names or []) + (dataset.num_feature_names or [])
-    
-    # 3. Apply same feature selection
-    MI_THRESHOLD = 0.01
-    significant_features = mi_scores >= MI_THRESHOLD
-    mi_ranks = np.argsort(-mi_scores)[significant_features[np.argsort(-mi_scores)]]
-    
-    print("\n=== MI Selection Analysis ===")
-    print(f"Total features before selection: {dataset.X_num['test'].shape[1]}")
-    print(f"Number of features to select: {len(mi_ranks)}")
-    print("Features sorted by MI score:")
-    for idx, score in sorted(enumerate(mi_scores), key=lambda x: x[1], reverse=True):
-        feature_name = all_features[idx]
-        print(f"Feature {idx} ({feature_name}): MI={score:.4f}")
-    print(f"\nSelected feature indices and names:")
-    for idx in mi_ranks:
-        feature_name = all_features[idx]
-        print(f"Feature {idx} ({feature_name}): MI={mi_scores[idx]:.4f}")
-    
-    # 4. Select features using same indices for both sets
-    dataset.X_num['test'] = dataset.X_num['test'][:, mi_ranks]
-    dataset.X_num['val'] = dataset.X_num['val'][:, mi_ranks]
-    print(f"Final feature shape: {dataset.X_num['test'].shape}\n")
-    
+        # Always concatenate: [cat, num]
+        X_test = np.concatenate([encoded_cat_test, dataset.X_num['test']], axis=1)
+        X_val = np.concatenate([encoded_cat_val, dataset.X_num['val']], axis=1)
+
+        print("[DEBUG][EVAL] Encoded cat shape (test):", encoded_cat_test.shape)
+        print("[DEBUG][EVAL] X_test shape after concat:", X_test.shape)
+        print("[DEBUG][EVAL] X_val shape after concat:", X_val.shape)
+    else:
+        print(">>> SKIPPING CATBOOST ENCODER BLOCK, using only numerical features")
+        X_test = dataset.X_num['test']
+        X_val = dataset.X_num['val']
+        print("[DEBUG][EVAL] X_test shape (no catenc):", X_test.shape)
+        print("[DEBUG][EVAL] X_val shape (no catenc):", X_val.shape)
+
+    # --- FIX: Feature count check is now AFTER concatenation ---
+    expected_n_features = checkpoint.get('n_features', None)
+    if expected_n_features is not None and expected_n_features != X_test.shape[1]:
+        print(f"WARNING: Model was trained with {expected_n_features} features, but evaluation is using {X_test.shape[1]}.")
+        print("You must retrain the model with the current feature selection logic.")
+        sys.exit(1)
+    # --- END FIX ---
+
+    print("\n[DEBUG][EVAL] Final feature names (cat + num):")
+    if args.catenc and dataset.X_cat is not None:
+        print("Cat features (encoded):", dataset.cat_feature_names)
+        print("Num features:", dataset.num_feature_names)
+        print("Order for model input:", dataset.cat_feature_names + dataset.num_feature_names)
+    else:
+        print("Num features:", dataset.num_feature_names)
+        print("Order for model input:", dataset.num_feature_names)
+
+    print("[DEBUG][EVAL] X_test shape:", X_test.shape)
+    print("[DEBUG][EVAL] X_val shape:", X_val.shape)
+
     # Now prepare tensors and evaluate
-    X_num_test = torch.tensor(dataset.X_num['test'], dtype=torch.float32).to(device)
+    X_num_test = torch.tensor(X_test, dtype=torch.float32).to(device)
     y_test = torch.tensor(dataset.y['test'], dtype=torch.float32).to(device)
     
     # Initialize model with exact feature count
     model = ExcelFormer(
-        d_numerical=len(mi_ranks),  # Use selected feature count
+        d_numerical=X_test.shape[1],  # Use selected feature count
         d_out=2,  # Binary classification
         categories=None,
         token_bias=True,
@@ -165,7 +176,7 @@ def main():
     
     # Create datasets for both
     val_dataset = TensorDataset(
-        torch.tensor(dataset.X_num['val'], dtype=torch.float32).to(device),
+        torch.tensor(X_val, dtype=torch.float32).to(device),
         torch.tensor(dataset.y['val'], dtype=torch.float32).to(device)
     )
     test_dataset = TensorDataset(X_num_test, y_test)
@@ -209,10 +220,11 @@ def main():
     plt.ylim([0.0, 1.05])
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
-    plt.title('ExcelFormer ROC Curves - Top 25 Mutual Information Features')
+    size_str = f"{args.sample_size:,}" if args.sample_size else "Full"
+    plt.title(f'ExcelFormer ROC Curve - {size_str} Samples')
     plt.legend(loc="lower right")
     plt.grid(True)
-    plt.savefig('roc_curves_comparison.png')
+    plt.savefig(f'roc_curve_excelformer_{size_str.replace(",", "")}.png')
     plt.show()
     
     # Calculate and print metrics for both sets
@@ -231,6 +243,10 @@ def main():
     print("\nTEST SET METRICS:")
     print(f"ROC AUC: {metrics['test']['roc_auc']:.4f}")
     print(f"Accuracy: {metrics['test']['accuracy']:.4f}")
+
+    print("Final feature order used for evaluation:")
+    print(dataset.cat_feature_names + dataset.num_feature_names)
+    print("X_test.shape:", X_test.shape)
 
 if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')

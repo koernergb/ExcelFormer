@@ -71,6 +71,16 @@ DATASETS = [
     'road-safety', 'medical_charges', 'SGEMM_GPU_kernel_performance', 'covtype', 'nyc-taxi-green-dec-2016', 'android_security'
 ]
 
+# === XGBoost feature list, in order ===
+XGBOOST_FEATURES = [
+    'ContentRating', 'Genre', 'CurrentVersion', 'AndroidVersion', 'DeveloperCategory',
+    'lowest_android_version', 'highest_android_version', 'privacy_policy_link',
+    'developer_website', 'days_since_last_update', 'isSpamming', 'max_downloads_log',
+    'LenWhatsNew', 'PHONE', 'OneStarRatings', 'developer_address', 'FourStarRatings',
+    'intent', 'ReviewsAverage', 'STORAGE', 'LastUpdated', 'TwoStarRatings',
+    'LOCATION', 'FiveStarRatings', 'ThreeStarRatings'
+]
+
 def get_training_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=str, default='result/ExcelFormer/default')
@@ -84,11 +94,17 @@ def get_training_args():
     parser.add_argument("--save", action='store_true', help='whether to save model')
     parser.add_argument("--catenc", action='store_true', help='whether to use catboost encoder for categorical features')
     parser.add_argument("--resume", type=str, default=None, help='path to checkpoint to resume from')
+    parser.add_argument("--sample_size", type=int, choices=[10000, 50000, 100000], default=None,
+                        help="Subset size for training/validation/test (matches XGBoost splits)")
     args = parser.parse_args()
 
     args.output = f'{args.output}/mixup({args.mix_type})/{args.dataset}/{args.seed}'
     if not os.path.isdir(args.output):
-        os.makedirs(args.output)
+        os.makedirs(args.output, exist_ok=True)
+    if args.sample_size is not None:
+        args.output += f"/{args.sample_size}"
+        if not os.path.isdir(args.output):
+            os.makedirs(args.output, exist_ok=True)
     # some basic model configuration
     cfg = {
         "model": {
@@ -140,6 +156,15 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 args, cfg = get_training_args()
 seed_everything(args.seed)
 
+# === NEW: Load indices if sample_size is specified ===
+if args.sample_size is not None:
+    indices_dir = './indices'
+    train_indices = np.load(f"{indices_dir}/train_indices_{args.sample_size}.npy")
+    val_indices = np.load(f"{indices_dir}/val_indices_{args.sample_size}.npy")
+    test_indices = np.load(f"{indices_dir}/test_indices_{args.sample_size}.npy")
+    print(f"Loaded indices for sample size {args.sample_size}:")
+    print(f"  train: {train_indices.shape}, val: {val_indices.shape}, test: {test_indices.shape}")
+
 """ prepare Datasets and Dataloaders """
 assert args.dataset in DATASETS
 T_cache = False # save data preprocessing cache
@@ -152,7 +177,12 @@ transformation = Transformations(
     num_nan_policy='drop-rows'  # Change from None or 'mean' to 'drop-rows'
 )'''
 
-dataset = build_dataset(DATA / args.dataset, transformation, T_cache)
+indices_dir = './indices' if args.sample_size is not None else None
+dataset = build_dataset(
+    DATA / args.dataset, transformation, T_cache,
+    sample_size=args.sample_size, indices_dir=indices_dir,
+    selected_features=XGBOOST_FEATURES
+)
 
 if dataset.X_num['train'].dtype == np.float64:
     dataset.X_num = {k: v.astype(np.float32) for k, v in dataset.X_num.items()}
@@ -163,96 +193,86 @@ if args.catenc and dataset.X_cat is not None:
         cols=list(range(len(cardinalities))), 
         return_df=False
     ).fit(dataset.X_cat['train'], dataset.y['train'])
+    # Use new variables for encoded+concatenated features
+    X_num_processed = {}
     for k in ['train', 'val', 'test']:
-        # 1: directly regard catgorical features as numerical
-        dataset.X_num[k] = np.concatenate([enc.transform(dataset.X_cat[k]).astype(np.float32), dataset.X_num[k]], axis=1)
-print(f"dataset.X_num['train'].shape: {dataset.X_num['train'].shape}")
-d_out = dataset.n_classes or 1
-X_num, X_cat, ys = prepare_tensors(dataset, device=device)
+        encoded_cat = enc.transform(dataset.X_cat[k]).astype(np.float32)
+        X_num_processed[k] = np.concatenate([encoded_cat, dataset.X_num[k]], axis=1)
+    print("Shape of X_num_train after concat:", X_num_processed['train'].shape)
+else:
+    X_num_processed = dataset.X_num  # Use as-is if no catenc
+
+# Use X_num_processed for all downstream code
+X_num, X_cat, ys = prepare_tensors(
+    # Use processed features
+    type('DatasetObj', (), {
+        'X_num': X_num_processed,
+        'X_cat': None if args.catenc else dataset.X_cat,
+        'y': dataset.y,
+        'n_classes': dataset.n_classes,
+        'is_binclass': dataset.is_binclass,
+        'is_multiclass': dataset.is_multiclass,
+        'is_regression': dataset.is_regression,
+        'calculate_metrics': dataset.calculate_metrics,
+        'n_features': X_num_processed['train'].shape[1],
+        'num_feature_names': dataset.num_feature_names,
+        'cat_feature_names': dataset.cat_feature_names,
+        'get_category_sizes': dataset.get_category_sizes,
+    })(),
+    device=device
+)
 print(f"X_num shape after prepare_tensors: {X_num['train'].shape}")
-if args.catenc: # if use CatBoostEncoder then drop original categorical features
+if args.catenc:
     X_cat = None
 
+# ====== DO NOT PRINT OR USE mi_scores, mi_ranks, feature_mi_pairs, etc. ======
 
+# After CatBoost encoding, just use:
+n_num_features = X_num['train'].shape[1]  # Use processed X_num, not dataset.X_num
+print(f"n_num_features: {n_num_features}")
 
-""" ORDER numerical features with MUTUAL INFORMATION """
-print(f"X_num shape before reorder: {X_num['train'].shape}")
-mi_cache_dir = 'cache/mi'
-if not os.path.isdir(mi_cache_dir):
-    os.makedirs(mi_cache_dir)
-mi_cache_file = f'{mi_cache_dir}/{args.dataset}.npy' # cache to save mutual information
-if os.path.exists(mi_cache_file):
-    os.remove(mi_cache_file)
-if os.path.exists(mi_cache_file):
-    mi_scores = np.load(mi_cache_file)
-    print(f"mi_scores shape: {mi_scores.shape}")
+# --- FIX: Define d_out here ---
+if hasattr(dataset, 'is_binclass') and dataset.is_binclass:
+    d_out = 2
+elif hasattr(dataset, 'is_multiclass') and dataset.is_multiclass:
+    d_out = dataset.n_classes
 else:
-    mi_func = mutual_info_regression if dataset.is_regression else mutual_info_classif
-    print(f"x_num shape in mi_func: {dataset.X_num['train'].shape}")
-    mi_scores = mi_func(dataset.X_num['train'], dataset.y['train']) # calculate MI
-    print(f"mi_scores shape: {mi_scores.shape}")
-    np.save(mi_cache_file, mi_scores)
-
-# Add feature selection based on absolute MI threshold
-MI_THRESHOLD = 0.01
-significant_features = mi_scores >= MI_THRESHOLD
-mi_ranks = np.argsort(-mi_scores)[significant_features[np.argsort(-mi_scores)]]
-
-print(f"Original number of features: {len(mi_scores)}")
-print(f"Number of features kept: {len(mi_ranks)} (MI score >= {MI_THRESHOLD})")
-
-# Reorder and filter the features with mutual information ranks
-X_num = {k: v[:, mi_ranks] for k, v in X_num.items()}
-# Normalized mutual information for loss weight (only for significant features)
-sorted_mi_scores = torch.from_numpy(mi_scores[mi_ranks] / mi_scores[mi_ranks].sum()).float().to(device)
-
-# Update n_num_features for model initialization
-n_num_features = len(mi_ranks)
-print(f"Updated n_num_features: {n_num_features}")
-
-# Add these debug prints right after the MI calculation and feature selection
-print("\n=== Feature Selection Debug ===")
-print(f"Original features shape: {dataset.X_num['train'].shape}")
-print(f"MI scores shape: {mi_scores.shape}")
-print(f"Selected feature indices (mi_ranks): {mi_ranks}")
-print(f"Number of selected features: {len(mi_ranks)}")
-print("=== End Debug ===\n")
+    d_out = 1
+# --- END FIX ---
 
 # After MI calculation but before model creation
-print("\n=== Mutual Information Feature Analysis ===")
-all_features = (dataset.cat_feature_names or []) + (dataset.num_feature_names or [])
-feature_mi_pairs = list(zip(all_features, mi_scores))
-feature_mi_pairs.sort(key=lambda x: x[1], reverse=True)
-
-print("\nFeatures ranked by MI score:")
-for feature, mi in feature_mi_pairs:
-    print(f"{feature}: {mi:.4f}")
-
-print(f"MI scores for all features: {mi_scores}")
-print(f"Features selected (MI >= {MI_THRESHOLD}): {mi_ranks}")
-print(f"Number of features: Original={len(mi_scores)}, Selected={len(mi_ranks)}")
-print("=== End Analysis ===\n")
+# print("\n=== Mutual Information Feature Analysis ===")
+# all_features = (dataset.cat_feature_names or []) + (dataset.num_feature_names or [])
+# feature_mi_pairs = list(zip(all_features, mi_scores))
+# feature_mi_pairs.sort(key=lambda x: x[1], reverse=True)
+# print("\nFeatures ranked by MI score:")
+# for feature, mi in feature_mi_pairs:
+#     print(f"{feature}: {mi:.4f}")
+# print(f"MI scores for all features: {mi_scores}")
+# print(f"Features selected (all, ordered by MI): {mi_ranks}")
+# print(f"Number of features: Original={len(mi_scores)}, Selected={len(mi_ranks)}")
+# print("=== End Analysis ===\n")
 
 # After MI selection but before model creation (around line 213)
-print("\n=== Final Feature List for Training ===")
-print(f"Total selected features: {len(mi_ranks)}")
+# print("\n=== Final Feature List for Training ===")
+# print(f"Total selected features: {len(mi_ranks)}")
 
 # Get feature names in order
-all_features = (dataset.cat_feature_names or []) + (dataset.num_feature_names or [])
-selected_features = [all_features[i] for i in mi_ranks]
+# all_features = (dataset.cat_feature_names or []) + (dataset.num_feature_names or [])
+# selected_features = [all_features[i] for i in mi_ranks]
 
 # Count feature types
-num_features = len([f for f in selected_features if f in dataset.num_feature_names]) if dataset.num_feature_names else 0
-cat_features = len([f for f in selected_features if f in dataset.cat_feature_names]) if dataset.cat_feature_names else 0
+# num_features = len([f for f in selected_features if f in dataset.num_feature_names]) if dataset.num_feature_names else 0
+# cat_features = len([f for f in selected_features if f in dataset.cat_feature_names]) if dataset.cat_feature_names else 0
 
-print("\nFeature counts:")
-print(f"Total selected features: {len(selected_features)}")
-print(f"Numerical features: {num_features}")
-print(f"Categorical features: {cat_features}")
+# print("\nFeature counts:")
+# print(f"Total selected features: {len(selected_features)}")
+# print(f"Numerical features: {num_features}")
+# print(f"Categorical features: {cat_features}")
 
-print("\nFeatures in order:")
-for i, feature in enumerate(selected_features, 1):
-    print(f"{i}. {feature}")
+# print("\nFeatures in order:")
+# for i, feature in enumerate(selected_features, 1):
+#     print(f"{i}. {feature}")
 
 print("\nStarting training...")
 
@@ -624,9 +644,13 @@ for epoch in range(start_epoch, n_epochs + 1):
                 'losses': losses,
                 'val_metric': val_metric,
                 'test_metric': test_metric,
-                'running_time': running_time
+                'running_time': running_time,
+                'n_features': n_num_features
             }
-            torch.save(checkpoint, f"{args.output}/pytorch_model.pt")
+            model_path = f"{args.output}/pytorch_model.pt"
+            if os.path.exists(model_path):
+                os.remove(model_path)
+            torch.save(checkpoint, model_path)
     else:
         no_improvement += 1
     if test_score > best_test_score:
@@ -641,3 +665,24 @@ record_exp(
     losses=str(losses), val_score=str(val_metric), test_score=str(test_metric),
     cfg=cfg, time=running_time,
 )
+
+print("Features used for ExcelFormer training (should match XGBoost):")
+print(dataset.num_feature_names)
+print(dataset.cat_feature_names)
+
+print(f"=== TRAINING DATASET SIZE: {args.sample_size if args.sample_size else 'Full'} ===")
+
+# After all preprocessing, just before model creation
+
+print("\n[DEBUG][TRAIN] Final feature names (cat + num):")
+if args.catenc and dataset.X_cat is not None:
+    print("Cat features (encoded):", dataset.cat_feature_names)
+    print("Num features:", dataset.num_feature_names)
+    print("Order for model input:", dataset.cat_feature_names + dataset.num_feature_names)
+else:
+    print("Num features:", dataset.num_feature_names)
+    print("Order for model input:", dataset.num_feature_names)
+
+print("[DEBUG][TRAIN] X_num['train'] shape:", X_num['train'].shape)
+print("[DEBUG][TRAIN] X_num['val'] shape:", X_num['val'].shape)
+print("[DEBUG][TRAIN] X_num['test'] shape:", X_num['test'].shape)
