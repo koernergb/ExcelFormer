@@ -91,16 +91,23 @@ class Dataset:
             df = df[selected_features + ['status']]  # keep target
             print("[DEBUG][DATA] DataFrame columns after selection:", df.columns.tolist())
 
-        # === Subset using provided indices if sample_size is specified ===
-        if sample_size is not None and indices_dir is not None:
+        # === Subset using provided indices (for both subset and full dataset) ===
+        if indices_dir is not None:
             # Save the original index before resetting
             df['orig_index'] = df.index
             df = df.reset_index(drop=True)
             orig_index_to_new = dict(zip(df['orig_index'], df.index))
-            train_idx = np.load(f"{indices_dir}/train_indices_{sample_size}.npy")
-            val_idx = np.load(f"{indices_dir}/val_indices_{sample_size}.npy")
-            test_idx = np.load(f"{indices_dir}/test_indices_{sample_size}.npy")
-            print(f"Loaded indices for sample size {sample_size}:")
+            # Load indices based on sample_size or use "full" for full dataset
+            if sample_size is not None:
+                train_idx = np.load(f"{indices_dir}/train_indices_{sample_size}.npy")
+                val_idx = np.load(f"{indices_dir}/val_indices_{sample_size}.npy")
+                test_idx = np.load(f"{indices_dir}/test_indices_{sample_size}.npy")
+                print(f"Loaded indices for sample size {sample_size}:")
+            else:
+                train_idx = np.load(f"{indices_dir}/train_indices_full.npy")
+                val_idx = np.load(f"{indices_dir}/val_indices_full.npy")
+                test_idx = np.load(f"{indices_dir}/test_indices_full.npy")
+                print(f"Loaded indices for full dataset:")
             print(f"  train: {train_idx.shape}, val: {val_idx.shape}, test: {test_idx.shape}")
             # Map original indices to new positions
             train_pos = [orig_index_to_new[i] for i in train_idx if i in orig_index_to_new]

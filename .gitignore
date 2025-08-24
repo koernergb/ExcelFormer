@@ -3,3 +3,15 @@
 env/
 DATA/
 cache/
+bin/__pycache__/
+lib/__pycache__/
+*.pt
+*.pth
+*.pkl
+*.pt.gz
+*.pth.gz
+*.pkl.gz
+*.pt.tar
+*.pth.tar
+*.pkl.tar
+__pycache__/
